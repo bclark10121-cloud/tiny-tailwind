@@ -24,6 +24,7 @@ This game has combat, enemies and bosses. Override rows 1 and 2 in `STANDARDS_OV
 
 - 2026-11-15: use best judgment for the MVP. One biome only (the meadow, with its cave and keep) until the gameplay is good.
 - 2026-11-15: add the game to The Game Shelf with every update, in the same card format as the other games.
+- 2026-11-15: the ship is a 3D model (Gemini reference views, then Meshy) rendered into sprites for the 2D game. Shipped on its own as v0.3.1. Spec sheets for enemies, bosses, new ships and add-ons are backlog item 37.
 
 ## Rules
 
@@ -31,7 +32,7 @@ This game has combat, enemies and bosses. Override rows 1 and 2 in `STANDARDS_OV
 - Enemies live in `data/enemies.json`, finds in `data/finds.json`, breakables in `data/props.json` and shop items in `data/shop.json`. Coin caches, breakables and Wren's Wagon are placed in `tools/make_world.py`. New enemies, finds, rooms, caches and shop items need no new code (G4.9).
 - Movement, shots and hits are plain maths in `scripts/main.gd`. No physics bodies (override 6).
 - Shots, sparks and pickups live in pools made once. Never create or free nodes during play (E4.5).
-- All art is drawn in code in `scripts/world_view.gd` and `scripts/hud.gd`. No textures. Use only letters, digits and plain punctuation in on-screen text: the built-in font has no star or box symbols.
+- All art is drawn in code in `scripts/world_view.gd` and `scripts/hud.gd`. No textures, with one exception: the ship. Its five sprites in `art/ship/` are rendered from the Meshy model `art_source/swallow_glider.glb` with `tools/render_ship_sprites.py` (Brian, 2026-11-15). Godot skips `art_source/`, so the model stays out of the builds. Any other texture needs Brian's OK. Use only letters, digits and plain punctuation in on-screen text: the built-in font has no star or box symbols.
 - Save file is `user://tiny_tailwind.json`, format `v: 1`, written with `addons/bc_common/save_store.gd`. Only add fields, each with a safe default. Find ids, checkpoint ids and arena ids from a save are checked against the data files (E6.7).
 - Never rename a find id, a checkpoint id, an arena id, a coin cache id or a shop item id. Shop purchases and caches from a save are checked against the data (E6.7).
 - Breakables are solid and can be shot. They must never block the only way to anything: `--reach` checks it.

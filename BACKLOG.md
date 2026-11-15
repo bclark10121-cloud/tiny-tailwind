@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.3.0. Brian decides the order.
+Updated 2026-11-15 for v0.3.1. Brian decides the order.
 
 ## Done
 
@@ -19,10 +19,11 @@ Updated 2026-11-15 for v0.3.0. Brian decides the order.
 - v0.2.0 (2026-11-15), the Feel release. Brian found v0.1.2 much smoother and asked for bigger shots, then for best judgment on quality of life. Bigger shots, aim assist levels, a corner mini map, enemy health bars, a low health warning, auto pause, screen shake, rumble and touch stick settings.
 - v0.2.1 (2026-11-15). Brian asked for a different default ship shape and picked the Swallow glider from four options. The ship turns smoothly toward the aim. New app icon.
 - v0.3.0 (2026-11-15), Release 2: coins and the shop. Coins from enemies, trees and breakable bushes, crystals and pots. 10 hidden coin caches. Wren's Wagon with 7 items: Repair kit, Heart seed, Spare part, Coin magnet, Shield charm, Quick dash and Treasure map.
+- v0.3.1 (2026-11-15). Brian asked for a 3D modeled ship. The Swallow glider got Gemini reference views, a Meshy 3D model and a spec sheet. The game now draws the ship from five sprites rendered from that model. It banks into turns and sideways moves. Gameplay did not change.
 
 ## Now
 
-- Brian plays v0.3.0 and reports how coins and prices feel.
+- Brian plays v0.3.1 and reports how the new ship looks, and how coins and prices feel.
 - Next is Release 3, weapons (v0.4.0), unless Brian picks something else.
 
 ## Asked for by Brian, not built yet
@@ -116,12 +117,12 @@ Item 37 rides along with the art it covers: ship and add-on sheets in Release 5,
 - 2026-11-15: a new default ship shape, the Swallow glider, released on its own as v0.2.1, then Release 2.
 - 2026-11-15: backlog items 1 to 12, a list of suggested items and a plan over 10 releases.
 - 2026-11-15: a reference spec sheet for the Swallow glider (Gemini views, then a Meshy 3D model), and spec sheets for enemies, new ships and more added as item 37.
-- 2026-11-15: render the Meshy 3D Swallow ship into sprites for the 2D game. This is an exception to the rule that all art is drawn in code. Not built yet.
+- 2026-11-15: render the Meshy 3D Swallow ship into sprites for the 2D game, as its own release. This is an exception to the rule that all art is drawn in code. Shipped in v0.3.1.
 
 ## Judgment calls made for v0.1.0 (Brian can change any)
 
 - Name: Tiny Tailwind, chosen by Brian on 2026-11-15 after seeing the overlap notes (a space shooter called Tailwind: Prologue exists, and the name sits near Tiny Titans Football).
-- Look: 2D, drawn in code.
+- Look: 2D, drawn in code. The ship became sprites from a 3D model in v0.3.1 (Brian's ask).
 - Signing: the real key from `game-signing`.
 - Overrides 3 to 7 in `STANDARDS_OVERRIDES.md`.
 - Default difficulty is Normal. Auto aim is off by default.

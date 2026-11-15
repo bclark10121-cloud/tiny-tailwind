@@ -1,6 +1,11 @@
 # Credits
 
-Tiny Tailwind is an original game. The world, the ship, the enemies, the boss and every picture are drawn in code for this game. The names and maps are our own.
+Tiny Tailwind is an original game. The world, the enemies, the boss and every other picture are drawn in code for this game. The ship is an original 3D model made for this game. The names and maps are our own.
+
+## The ship (v0.3.1)
+
+- The Swallow glider, an original design for this game. Reference views made with Google Gemini, then turned into a 3D model with Meshy (meshy.ai, Meshy 7.1, Brian's paid plan, licence set to Private). Model: `art_source/swallow_glider.glb`.
+  Changes: rendered into five top-down sprites with an outline by `tools/render_ship_sprites.py`. Sprites: `art/ship/`.
 
 ## Music (found through the Patch.gg asset library)
 
@@ -17,7 +22,7 @@ Tiny Tailwind is an original game. The world, the ship, the enemies, the boss an
 ## Made for this game
 
 - All sounds, made by `tools/make_sfx.py`.
-- All art, drawn in code.
+- All art except the ship, drawn in code.
 - The icon, drawn in code.
 
 ## Tools

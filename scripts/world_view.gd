@@ -1,5 +1,5 @@
 extends Node2D
-## Draws the world. All art is drawn in code. No textures.
+## Draws the world. All art is drawn in code, except the ship sprites in art/ship/ (v0.3.1).
 ## The map itself (floor, water, rifts and walls) is drawn once per map into chunks of 8 x 8 tiles. Godot keeps those
 ## drawings and moves them with the camera, so a frame only redraws the things that move. Off-screen chunks are culled.
 ## Layers, back to front: floor chunks (z -3), the under layer (z -2: water shimmer, gates, doors, checkpoints, finds),
@@ -41,6 +41,7 @@ var draw_ms: float = 0.0                        # smoothed time spent in the two
 
 func _ready() -> void:
 	font = ThemeDB.fallback_font
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS   # the ship sprites shrink smoothly (v0.3.1)
 	under = Under.new()
 	under.v = self
 	under.z_index = -2
@@ -504,39 +505,44 @@ func _enemy(e: Enemy, t: float) -> void:
 				draw_circle(p + look * 8.0, 11.0, Color("20202c"))
 				draw_circle(p + look * 8.0 + Vector2(-3, -3), 3.5, Color.WHITE)
 
-## The Swallow glider (v0.2.1): swept wings and a forked tail, drawn facing the ship's eased heading.
-const GLIDER: Array[Vector2] = [Vector2(40, 0), Vector2(2, -10), Vector2(-26, -38), Vector2(-14, -8), Vector2(-36, -14), Vector2(-24, 0),
-	Vector2(-36, 14), Vector2(-14, 8), Vector2(-26, 38), Vector2(2, 10)]
-const GLIDER_K := 0.7
+## The Swallow glider (v0.3.1): five top-down sprites rendered from the Meshy 3D model (tools/render_ship_sprites.py).
+## The one exception to drawn-in-code art (Brian, 2026-11-15). Each sprite faces right (angle 0) and is turned to the
+## ship's eased heading. The ship banks into turns and sideways moves. Shadow, flame, flashes, dash and shield stay in code.
+const SHIP_FRAMES: Array[Texture2D] = [preload("res://art/ship/ship_bank_m30.png"), preload("res://art/ship/ship_bank_m15.png"),
+	preload("res://art/ship/ship_bank_p00.png"), preload("res://art/ship/ship_bank_p15.png"), preload("res://art/ship/ship_bank_p30.png")]
+const SHIP_SIZE := 66.0                         # drawn size of the square sprite. The ship inside is about 54 px long
+const SHIP_TAIL := 0.39                         # engine distance behind the centre, as a share of SHIP_SIZE
+var ship_bank: float = 0.0                      # -1 full left bank to 1 full right bank, eased. Drawing only, never saved
+var ship_last_ang: float = 0.0
+var ship_last_t: float = -1.0
 
 func _ship(t: float) -> void:
 	var p: Vector2 = g.ppos
+	var fwd: Vector2 = Vector2.from_angle(g.ship_ang)
+	var side: Vector2 = fwd.orthogonal()           # the ship's left on screen
+	# bank: turning clockwise (right) or sliding to the ship's right banks right
+	var dt: float = clampf(t - ship_last_t, 0.0, 0.1) if ship_last_t >= 0.0 else 0.0
+	if dt > 0.0:
+		var turn: float = wrapf(g.ship_ang - ship_last_ang, -PI, PI) / dt
+		var slide: float = -g.pvel.dot(side)
+		var want: float = clampf(turn * 0.12 + slide * 0.0025, -1.0, 1.0)
+		ship_bank = lerpf(ship_bank, want, 1.0 - exp(-dt * 10.0))
+	ship_last_ang = g.ship_ang
+	ship_last_t = t
 	if g.invuln > 0.0 and g.dash_t <= 0.0 and int(t * 20.0) % 2 == 0:
 		return
-	var fwd: Vector2 = Vector2.from_angle(g.ship_ang)
-	var side: Vector2 = fwd.orthogonal()
-	var to_world: Callable = func(v: Vector2) -> Vector2: return p + fwd * v.x * GLIDER_K + side * v.y * GLIDER_K
 	draw_circle(p + Vector2(0, 16), 15.0, Color(0, 0, 0, 0.2))
-	# thruster flame from the forked tail, longer when moving
+	# thruster flame from the engine, longer when moving
 	var flame: float = 8.0 + minf(18.0, g.pvel.length() * 0.045) + sin(t * 22.0) * 3.0
-	var tail: Vector2 = to_world.call(Vector2(-22, 0))
+	var tail: Vector2 = p - fwd * SHIP_SIZE * SHIP_TAIL
 	draw_colored_polygon(PackedVector2Array([tail + side * 6.5, tail - side * 6.5, tail - fwd * (flame + 9.0)]), Color("ffb347"))
 	draw_colored_polygon(PackedVector2Array([tail + side * 3.4, tail - side * 3.4, tail - fwd * (flame * 0.65 + 5.0)]), Color("fff0a8"))
-	# body and outline
-	var pts := PackedVector2Array()
-	for v: Vector2 in GLIDER:
-		pts.append(to_world.call(v))
-	draw_colored_polygon(pts, Color("f7f3e6") if g.hurt_flash <= 0.0 else Color("ff8a8a"))
-	var ring := PackedVector2Array(pts)
-	ring.append(pts[0])
-	draw_polyline(ring, Color("1f3b63"), 2.4, true)
-	# wing stripes and cockpit
-	draw_line(to_world.call(Vector2(0, -7)), to_world.call(Vector2(-18, -29)), Color("38c6e8"), 2.5, true)
-	draw_line(to_world.call(Vector2(0, 7)), to_world.call(Vector2(-18, 29)), Color("38c6e8"), 2.5, true)
-	var cp: Vector2 = to_world.call(Vector2(14, 0))
-	draw_circle(cp, 6.0, Color("1f3b63"))
-	draw_circle(cp, 4.5, Color("38c6e8"))
-	draw_circle(cp - side * 1.5 - fwd * 1.0, 1.6, Color.WHITE)
+	# the ship sprite: pick the bank frame, turn it to the heading, tint red on a hurt flash
+	var frame: int = clampi(roundi(ship_bank * 2.0) + 2, 0, 4)
+	var tint: Color = Color.WHITE if g.hurt_flash <= 0.0 else Color(1.0, 0.55, 0.55)
+	draw_set_transform(p, g.ship_ang, Vector2.ONE)
+	draw_texture_rect(SHIP_FRAMES[frame], Rect2(-SHIP_SIZE * 0.5, -SHIP_SIZE * 0.5, SHIP_SIZE, SHIP_SIZE), false, tint)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if g.dash_t > 0.0:
 		draw_arc(p, 27.0, 0.0, TAU, 20, Color(0.6, 0.95, 1.0, 0.8), 3.0)
 	elif g.shield_ready and g.owns("shield"):

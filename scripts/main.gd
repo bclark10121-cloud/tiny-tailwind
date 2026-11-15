@@ -11,7 +11,7 @@ const WorldView := preload("res://scripts/world_view.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VERSION := "0.3.0"
+const VERSION := "0.3.1"
 const T := 64.0
 const PR := 17.0
 const MAX_BULLETS := 700
