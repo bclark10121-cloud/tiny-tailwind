@@ -1,0 +1,22 @@
+[
+{"id": "m1", "name": "Moon Pebble", "kind": "keepsake", "note": "Smooth, pale and a little warm."},
+{"id": "m2", "name": "Brass Acorn", "kind": "keepsake", "note": "It rattles. Something is inside."},
+{"id": "m3", "name": "Paper Kite", "kind": "keepsake", "note": "Snagged in the hedge at the crossroads."},
+{"id": "m4", "name": "Lake Bell", "kind": "keepsake", "note": "Rings on its own when the water is still."},
+{"id": "m5", "name": "Meadow Heart Seed", "kind": "heart", "note": "One more heart."},
+{"id": "m6", "name": "Reed Flute", "kind": "keepsake", "note": "Three notes. All of them cheerful."},
+{"id": "m7", "name": "Rift Lantern", "kind": "keepsake", "note": "Left burning on the far bank."},
+{"id": "m8", "name": "Cloud Feather", "kind": "keepsake", "note": "Lighter than it looks."},
+{"id": "m9", "name": "Clover Pin", "kind": "keepsake", "note": "Four leaves, slightly bent."},
+{"id": "c1", "name": "Echo Shell", "kind": "keepsake", "note": "Hold it close. The hollow hums back."},
+{"id": "c2", "name": "Glow Moth Jar", "kind": "keepsake", "note": "The moths left. The glow stayed."},
+{"id": "c_dash", "name": "Dash Core", "kind": "ability", "note": "Dash in a burst. A dash crosses rifts and slips past shots."},
+{"id": "c4", "name": "Hollow Heart Seed", "kind": "heart", "note": "One more heart."},
+{"id": "c5", "name": "Blind Fish Charm", "kind": "keepsake", "note": "Carved from river stone."},
+{"id": "d1", "name": "Keep Heart Seed", "kind": "heart", "note": "One more heart."},
+{"id": "d2", "name": "Rusty Key", "kind": "keepsake", "note": "It fits no lock you have found."},
+{"id": "d3", "name": "Thorn Crown", "kind": "keepsake", "note": "Woven, not forged."},
+{"id": "d4", "name": "Cracked Shield", "kind": "keepsake", "note": "It stopped one last hit."},
+{"id": "d5", "name": "Warden Bell", "kind": "keepsake", "note": "Its ring calms the brambles."},
+{"id": "d6", "name": "Star Map Scrap", "kind": "keepsake", "note": "A corner of a bigger sky. More to come."}
+]

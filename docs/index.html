@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tiny Tailwind</title><link rel="icon" href="icon.png">
+<meta name="description" content="Tiny Tailwind is a twin-stick adventure shooter for Android and the browser. Fly a small ship, find keepsakes and calm the warden of the keep.">
+<style>
+:root{--ink:#1c2740;--accent:#1f3b63;--warm:#d9792b;--card:#fffdf4}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(#bfe6f5 0%,#dff2c9 52%,#f8ecc6 100%) fixed;color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:36px 20px 60px}
+header{text-align:center}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(40px,8vw,64px);letter-spacing:3px;margin:14px 0 0;color:var(--accent);text-transform:uppercase}
+.tag{letter-spacing:4px;text-transform:uppercase;font-size:12px;opacity:.8;margin:4px 0 22px}
+.lead{font-size:18px;max-width:640px;margin:0 auto 24px;text-wrap:balance}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+a.btn{display:inline-block;padding:13px 22px;border-radius:14px;font-weight:700;text-decoration:none;border:1px solid rgba(0,0,0,.2)}
+a.primary{background:var(--accent);color:#fff}a.ghost{background:rgba(255,255,255,.75);color:var(--ink)}
+a.btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.note{font-size:13px;opacity:.8;text-align:center}.note a{color:inherit}
+.shots{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:34px 0}
+.shots img{width:100%;border-radius:14px;border:1px solid rgba(28,39,64,.2);display:block}
+h2{font-family:Georgia,"Times New Roman",serif;letter-spacing:1px;color:var(--accent);font-size:24px;margin:34px 0 10px;font-weight:400}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid rgba(28,39,64,.14);border-radius:14px;padding:14px 16px}
+.card b{color:var(--warm)}ol,ul{padding-left:20px;margin:6px 0}footer{margin-top:40px;font-size:13px;opacity:.7;text-align:center}footer a{color:inherit}
+@media (max-width:560px){.shots{grid-template-columns:1fr 1fr}.shots img:last-child{display:none}}
+</style></head><body><main>
+<header><h1>Tiny Tailwind</h1><div class="tag">A twin-stick adventure</div>
+<p class="lead">Fly a small ship through the Sunmeadow. Shoot your way past brambly critters, find 20 keepsakes, win the dash in Echo Hollow and calm the warden of Thornkeep. Defeat never costs a thing.</p>
+<div class="cta"><a class="btn primary" href="play/">Play in your browser</a><a class="btn ghost" href="downloads/TinyTailwind-v0.1.0.apk">Download for Android (APK)</a></div>
+<p class="note">Version 0.1.0. <a href="release-notes/v0.1.0.md">Release notes</a> · <a href="https://github.com/bclark10121-cloud/tiny-tailwind/blob/main/BACKLOG.md">Backlog</a> · <a href="https://github.com/bclark10121-cloud/tiny-tailwind">Source on GitHub</a></p></header>
+<div class="shots"><img src="shot-meadow.jpg" alt="The ship shooting at green critters in the Sunmeadow"><img src="shot-cave.jpg" alt="The ship finding the Dash Core in the cave"><img src="shot-warden.jpg" alt="The warden Thornhull filling its hall with pink shots"></div>
+<h2>What kind of game is this?</h2>
+<div class="grid">
+<div class="card"><b>Twin-stick shooter.</b> One thumb moves, the other aims and fires. Quick, exact and easy to pick up.</div>
+<div class="card"><b>An adventure.</b> One open meadow, a cave and a keep. A new ability opens new ground.</div>
+<div class="card"><b>Kind.</b> Checkpoints are close. Defeat sends you back with everything you had. Assists are always there.</div>
+<div class="card"><b>A first beta.</b> One biome, about 20 minutes. More of the world comes once it feels right.</div>
+</div>
+<h2>Things to do</h2>
+<ul><li>Explore the Sunmeadow and find all 20 keepsakes. The journal keeps count.</li>
+<li>Collect crystals, level up and upgrade Power, Fire rate, Speed and Range.</li>
+<li>Find three Heart Seeds for more hearts.</li>
+<li>Win the Dash Core in Echo Hollow, then dash across rifts.</li>
+<li>Clear the gated rooms of Thornkeep.</li>
+<li>Calm the warden Thornhull and beat your own best time.</li>
+<li>Fill in the map as you go.</li></ul>
+<h2>Controls</h2>
+<div class="grid">
+<div class="card"><b>Keyboard and mouse</b><br>WASD moves. The mouse aims and the left button fires. Arrow keys also aim and fire. Space or the right button dashes. Esc opens Menu.</div>
+<div class="card"><b>Xbox controller</b><br>Left stick moves. Right stick aims and fires. A, RB or RT dashes. View or Menu opens the Menu. In menus the D-pad or left stick moves, A chooses and B goes back.</div>
+<div class="card"><b>Touch</b><br>Left thumb moves. Right thumb aims and fires. Dash button on the right. Menu at the top right.</div>
+</div>
+<h2>Play with an Xbox controller</h2>
+<p>Any Xbox Wireless Controller with Bluetooth works. That is every Series X|S controller and the Xbox One controllers made since 2016. If the plastic around the Xbox button matches the face of the controller, it has Bluetooth. Other controllers that your phone or browser sees as a standard gamepad use the same buttons. You can play the whole game with the controller alone.</p>
+<div class="grid">
+<div class="card"><b>Buttons</b><ul><li>Left stick: move.</li><li>Right stick: aim and fire.</li><li>A, RB or RT: dash, once you have the Dash Core.</li><li>View or Menu: open and close the Menu.</li><li>D-pad or left stick: move between menu buttons.</li><li>A: choose. B: go back.</li></ul></div>
+<div class="card"><b>On Android</b><ol><li>Hold the Xbox button to turn the controller on.</li><li>Hold the small Pair button on top for 3 seconds, until the Xbox button flashes fast.</li><li>On your phone, open Settings, then Connected devices, then Pair new device.</li><li>Tap Xbox Wireless Controller. The Xbox button stays lit when it is connected.</li><li>Open Tiny Tailwind. The touch controls hide as soon as you use the controller.</li></ol></div>
+<div class="card"><b>In your browser</b><ol><li>Connect the controller to your computer with a USB cable or Bluetooth.</li><li>Open Play in your browser. Chrome, Edge, Firefox and Safari all work.</li><li>Press any button once after the game loads, so the browser sees the controller.</li></ol></div>
+</div>
+<h2>Install on Android</h2>
+<ol><li>Tap Download for Android on this page.</li><li>Open the file. Allow installs from your browser if your phone asks.</li><li>Tap Install, then Open.</li></ol>
+<h2>Feedback</h2>
+<p>Tell Brian what you think. Useful things to note:</p>
+<ul><li>How moving, aiming and dashing feel.</li><li>Whether enemies and the warden are too easy or too hard.</li><li>Where you got lost or stuck.</li><li>Anything that looks wrong, with a screenshot.</li><li>Your phone, controller or browser.</li></ul>
+<footer>Tiny Tailwind. Music by Juhani Junkala (CC0), found through Patch.gg. <a href="https://github.com/bclark10121-cloud/tiny-tailwind/blob/main/CREDITS.md">Credits</a> · <a href="https://bclark10121-cloud.github.io/">More games on The Game Shelf</a></footer>
+</main></body></html>

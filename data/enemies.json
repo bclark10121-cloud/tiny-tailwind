@@ -1,0 +1,92 @@
+{
+ "drifter": {
+  "name": "Mossback",
+  "hp": 4,
+  "r": 20,
+  "speed": 78,
+  "move": "chase",
+  "fire": "none",
+  "xp": 2,
+  "touch": 1,
+  "color": "#6fbf4a"
+ },
+ "mite": {
+  "name": "Gnatling",
+  "hp": 1,
+  "r": 12,
+  "speed": 185,
+  "move": "swarm",
+  "fire": "none",
+  "xp": 1,
+  "touch": 1,
+  "color": "#f2913d"
+ },
+ "spitter": {
+  "name": "Spitpod",
+  "hp": 6,
+  "r": 20,
+  "speed": 42,
+  "move": "wander",
+  "fire": "aimed",
+  "rate": 1.7,
+  "bspeed": 235,
+  "count": 1,
+  "xp": 3,
+  "touch": 1,
+  "color": "#a56be0"
+ },
+ "spinner": {
+  "name": "Whirlcap",
+  "hp": 10,
+  "r": 24,
+  "speed": 0,
+  "move": "still",
+  "fire": "ring",
+  "rate": 2.5,
+  "bspeed": 165,
+  "count": 8,
+  "xp": 5,
+  "touch": 1,
+  "color": "#35b8b0"
+ },
+ "charger": {
+  "name": "Ramhorn",
+  "hp": 8,
+  "r": 22,
+  "speed": 64,
+  "move": "charge",
+  "fire": "none",
+  "xp": 4,
+  "touch": 2,
+  "color": "#e2504c"
+ },
+ "lobber": {
+  "name": "Fanlord",
+  "hp": 12,
+  "r": 24,
+  "speed": 86,
+  "move": "keep_away",
+  "fire": "fan",
+  "rate": 2.1,
+  "bspeed": 250,
+  "count": 3,
+  "spread": 0.26,
+  "xp": 6,
+  "touch": 1,
+  "color": "#e8c33a"
+ },
+ "warden": {
+  "name": "Thornhull",
+  "hp": 300,
+  "r": 54,
+  "speed": 46,
+  "move": "boss",
+  "fire": "boss",
+  "rate": 1.0,
+  "bspeed": 190,
+  "count": 12,
+  "xp": 40,
+  "touch": 2,
+  "color": "#b0478f"
+ }
+}
