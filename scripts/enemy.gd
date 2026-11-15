@@ -25,6 +25,7 @@ var dormant: bool = false
 var is_add: bool = false
 var phase2: bool = false
 var flash: float = 0.0
+var bar_t: float = 0.0                 # seconds left to show the health bar after a hit
 var fire_t: float = 1.0
 var state: int = 0
 var st_t: float = 0.0
@@ -58,4 +59,5 @@ func setup(k: String, d: Dictionary, at: Vector2, grp: String, sd: float) -> voi
 	state = 0
 	st_t = 0.0
 	flash = 0.0
+	bar_t = 0.0
 	phase2 = false

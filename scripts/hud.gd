@@ -5,6 +5,17 @@ extends Control
 const TABS: Array[String] = ["ship", "journal", "map", "settings"]
 const TAB_NAMES: Dictionary = {"ship": "Ship", "journal": "Journal", "map": "Map", "settings": "Settings"}
 
+## The corner mini map: the tiles are drawn only when the map or the explored area changes. The dots redraw every frame.
+class MiniBase extends Control:
+	var h: Control
+	func _draw() -> void:
+		h.draw_mini_base(self)
+
+class MiniDots extends Control:
+	var h: Control
+	func _draw() -> void:
+		h.draw_mini_dots(self)
+
 var g: Node2D
 var font: Font
 var menu_open: bool = false
@@ -26,6 +37,11 @@ var map_ctl: Control
 var set_btns: Dictionary = {}
 var erase_armed: bool = false
 var pad_title: Label
+var mini_base: MiniBase
+var mini_dots: MiniDots
+var mini_s: float = 3.0
+var mini_map_id: String = ""
+var mini_seen: int = -1
 var pad_settings: Label
 var messages: Array[String] = []
 var msg_t: float = 0.0
@@ -47,6 +63,14 @@ func _ready() -> void:
 	menu_btn = _button("Menu", toggle_menu)
 	menu_btn.custom_minimum_size = Vector2(124, 56)
 	add_child(menu_btn)
+	mini_base = MiniBase.new()
+	mini_base.h = self
+	mini_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(mini_base)
+	mini_dots = MiniDots.new()
+	mini_dots.h = self
+	mini_dots.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mini_base.add_child(mini_dots)
 	row = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.visible = false
@@ -151,6 +175,7 @@ func _layout() -> void:
 	panel.position = Vector2(sm.position.x + (sm.size.x - pw) * 0.5, sm.position.y + 80.0)
 	panel.size = Vector2(pw, sm.size.y - 100.0)
 	dash_c = Vector2(sm.end.x - 96.0, sm.position.y + sm.size.y * 0.44)
+	_place_mini()
 
 # ------------------------------------------------------------------ pages
 
@@ -223,8 +248,14 @@ func _build_settings(holder: Control) -> void:
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
-	v.add_child(grid)
-	var ids: Array[String] = ["difficulty", "auto_aim", "speed_idx", "invincible", "music", "sfx", "show_fps", "fullscreen", "erase"]
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var sc := ScrollContainer.new()
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.follow_focus = true
+	sc.add_child(grid)
+	v.add_child(sc)
+	var ids: Array[String] = ["difficulty", "aim_assist", "speed_idx", "invincible", "minimap", "shake", "rumble", "stick_size", "music", "sfx", "show_fps", "fullscreen", "erase"]
 	for id: String in ids:
 		if id == "fullscreen" and OS.has_feature("mobile"):
 			continue
@@ -235,7 +266,7 @@ func _build_settings(holder: Control) -> void:
 	pad_settings = _label("", 18)
 	pad_settings.add_theme_color_override("font_color", Color("9fe8ff"))
 	v.add_child(pad_settings)
-	v.add_child(_label("Assists are here to use. Auto aim points and fires for you. Game speed slows everything. Invincible stops all damage. Defeat never costs anything.", 18))
+	v.add_child(_label("Assists are here to use. Aim assist bends your aim toward enemies. Auto fire aims and fires for you. Game speed slows everything. Invincible stops all damage. Defeat never costs anything.", 18))
 
 func _build_title() -> void:
 	title = ColorRect.new()
@@ -411,7 +442,11 @@ func _refresh_journal() -> void:
 func _refresh_settings() -> void:
 	var on: Callable = func(b: bool) -> String: return "On" if b else "Off"
 	(set_btns["difficulty"] as Button).text = "Difficulty: %s" % g.DIFF_NAMES[int(g.save["difficulty"])]
-	(set_btns["auto_aim"] as Button).text = "Auto aim: %s" % on.call(bool(g.save["auto_aim"]))
+	(set_btns["aim_assist"] as Button).text = "Aim assist: %s" % g.AIM_NAMES[int(g.save["aim_assist"])]
+	(set_btns["minimap"] as Button).text = "Mini map: %s" % on.call(bool(g.save["minimap"]))
+	(set_btns["shake"] as Button).text = "Screen shake: %s" % g.SHAKE_NAMES[int(g.save["shake"])]
+	(set_btns["rumble"] as Button).text = "Rumble: %s" % on.call(bool(g.save["rumble"]))
+	(set_btns["stick_size"] as Button).text = "Touch sticks: %s" % g.STICK_NAMES[int(g.save["stick_size"])]
 	(set_btns["speed_idx"] as Button).text = "Game speed: %d%%" % g.SPEEDS[int(g.save["speed_idx"])]
 	(set_btns["invincible"] as Button).text = "Invincible: %s" % on.call(bool(g.save["invincible"]))
 	(set_btns["music"] as Button).text = "Music: %s" % on.call(bool(g.save["music"]))
@@ -427,7 +462,13 @@ func _on_setting(id: String) -> void:
 			g.save["difficulty"] = (int(g.save["difficulty"]) + 1) % 3
 		"speed_idx":
 			g.save["speed_idx"] = (int(g.save["speed_idx"]) + 1) % g.SPEEDS.size()
-		"auto_aim", "invincible", "sfx", "show_fps":
+		"aim_assist":
+			g.save["aim_assist"] = (int(g.save["aim_assist"]) + 1) % g.AIM_NAMES.size()
+		"shake":
+			g.save["shake"] = (int(g.save["shake"]) + 1) % g.SHAKE_NAMES.size()
+		"stick_size":
+			g.save["stick_size"] = (int(g.save["stick_size"]) + 1) % g.STICK_NAMES.size()
+		"invincible", "sfx", "show_fps", "minimap", "rumble":
 			g.save[id] = not bool(g.save[id])
 		"music":
 			g.save["music"] = not bool(g.save["music"])
@@ -502,7 +543,69 @@ func dash_hint() -> String:
 		return "Press the Dash button to dash."
 	return "Dash: Space, right mouse button, or A, RB or RT on an Xbox controller."
 
+# ------------------------------------------------------------------ mini map
+
+func mini_shown() -> bool:
+	return mini_base.visible
+
+func _place_mini() -> void:
+	if g.mw == 0:
+		return
+	mini_s = minf(220.0 / float(g.mw), 140.0 / float(g.mh))
+	mini_base.size = Vector2(float(g.mw) * mini_s, float(g.mh) * mini_s)
+	mini_base.position = Vector2(sm.end.x - 16.0 - mini_base.size.x, sm.position.y + 80.0)
+	mini_dots.size = mini_base.size
+
+func draw_mini_base(ci: Control) -> void:
+	if g.mw == 0:
+		return
+	var s: float = mini_s
+	ci.draw_rect(Rect2(Vector2(-4, -4), ci.size + Vector2(8, 8)), Color(0.05, 0.08, 0.16, 0.78))
+	var cw: int = int(ceil(float(g.mw) / 4.0))
+	var cols: Array[Color] = [Color("7fbf62"), Color(0, 0, 0, 0), Color("4fb4ea"), Color("101826")]
+	for ty: int in g.mh:
+		var start: int = -1
+		var kind: int = -1
+		for tx: int in g.mw + 1:
+			var k: int = 1
+			if tx < g.mw and g.seen_now.has((ty / 4) * cw + tx / 4):
+				k = g.tiles[ty * g.mw + tx]
+			if k != kind:
+				if kind != 1 and start >= 0:
+					ci.draw_rect(Rect2(float(start) * s, float(ty) * s, float(tx - start) * s, s), cols[kind])
+				start = tx
+				kind = k
+	ci.draw_rect(Rect2(Vector2(-4, -4), ci.size + Vector2(8, 8)), Color(0.22, 0.78, 0.91, 0.6), false, 2.0)
+
+func draw_mini_dots(ci: Control) -> void:
+	if g.mw == 0:
+		return
+	var k: float = mini_s / 64.0
+	var cw: int = int(ceil(float(g.mw) / 4.0))
+	for c: Dictionary in g.checkpoints:
+		var p: Vector2 = c["pos"]
+		if g.seen_now.has((int(p.y / 64.0) / 4) * cw + int(p.x / 64.0) / 4):
+			ci.draw_circle(p * k, 3.0, Color("ffd84a"))
+	for d: Dictionary in g.doors:
+		var dp: Vector2 = d["pos"]
+		if g.seen_now.has((int(dp.y / 64.0) / 4) * cw + int(dp.x / 64.0) / 4):
+			ci.draw_circle(dp * k, 3.5, Color("6fb8ff"))
+	var vs: Vector2 = get_viewport_rect().size
+	var c0: Vector2 = g.cam.get_screen_center_position()
+	ci.draw_rect(Rect2((c0 - vs * 0.5) * k, vs * k), Color(1, 1, 1, 0.35), false, 1.0)
+	ci.draw_circle(g.ppos * k, 3.5, Color.WHITE)
+	ci.draw_arc(g.ppos * k, 6.0, 0.0, TAU, 12, Color(1, 1, 1, 0.8), 1.5)
+
 func _process(delta: float) -> void:
+	var show_mini: bool = bool(g.save["minimap"]) and not menu_open and not title.visible and not end_card.visible and g.phase != g.Phase.END and g.mw > 0
+	mini_base.visible = show_mini
+	if show_mini:
+		if g.map_id != mini_map_id or g.seen_now.size() != mini_seen:
+			mini_map_id = g.map_id
+			mini_seen = g.seen_now.size()
+			_place_mini()
+			mini_base.queue_redraw()
+		mini_dots.queue_redraw()
 	if not messages.is_empty():
 		msg_t -= delta
 		if msg_t <= 0.0:
@@ -545,10 +648,10 @@ func _input(event: InputEvent) -> void:
 		var sd: InputEventScreenDrag = event
 		if sd.index == move_id:
 			move_p = sd.position
-			g.touch_move = ((move_p - move_o) / 64.0).limit_length(1.0)
+			g.touch_move = ((move_p - move_o) / (64.0 * _stick_k())).limit_length(1.0)
 		elif sd.index == aim_id:
 			aim_p = sd.position
-			g.touch_aim = ((aim_p - aim_o) / 50.0).limit_length(1.0)
+			g.touch_aim = ((aim_p - aim_o) / (50.0 * _stick_k())).limit_length(1.0)
 
 # ------------------------------------------------------------------ drawing
 
@@ -610,7 +713,20 @@ func _draw() -> void:
 		_draw_touch(vs)
 	# frame rate readout, off unless switched on in Settings
 	if bool(g.save["show_fps"]) and not menu_open:
-		_text(Vector2(sm.end.x - 136.0, sm.position.y + 90.0), "%d fps" % int(Engine.get_frames_per_second()), 18, Color("9fe8ff"), HORIZONTAL_ALIGNMENT_RIGHT, 124.0)
+		_text(Vector2(sm.end.x - 262.0, sm.position.y + 46.0), "%d fps" % int(Engine.get_frames_per_second()), 18, Color("9fe8ff"), HORIZONTAL_ALIGNMENT_RIGHT, 112.0)
+	# hurt flash and the low health warning at the screen edges
+	if ph == g.Phase.PLAY and not menu_open:
+		if g.hurt_flash > 0.0:
+			draw_rect(Rect2(Vector2.ZERO, vs), Color(1.0, 0.2, 0.25, g.hurt_flash * 0.6))
+		if g.hp <= 2 and g.max_hp() > 2 and not bool(g.save["invincible"]):
+			var la: float = 0.16 + 0.1 * sin(g.time * 6.0)
+			for i: int in 3:
+				var w: float = 14.0 * float(3 - i)
+				var c := Color(1.0, 0.15, 0.25, la * 0.7)
+				draw_rect(Rect2(0, 0, vs.x, w), c)
+				draw_rect(Rect2(0, vs.y - w, vs.x, w), c)
+				draw_rect(Rect2(0, 0, w, vs.y), c)
+				draw_rect(Rect2(vs.x - w, 0, w, vs.y), c)
 	# messages sit about one third of the way down (G4.3)
 	if not messages.is_empty() and not menu_open:
 		var a: float = clampf(msg_t / 0.3, 0.0, 1.0) * clampf((2.6 - msg_t) / 0.15, 0.0, 1.0)
@@ -630,16 +746,20 @@ func _draw() -> void:
 	elif ph == g.Phase.FADE_IN:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0.03, 0.04, 0.08, 1.0 - clampf(g.phase_t / 0.25, 0.0, 1.0)))
 
+func _stick_k() -> float:
+	return g.STICK_K[int(g.save["stick_size"])]
+
 func _draw_touch(vs: Vector2) -> void:
 	if not g.touch_visible or g.phase != g.Phase.PLAY:
 		return
 	var ring := Color(1, 1, 1, 0.28)
 	var mo: Vector2 = move_o if move_id != -1 else Vector2(sm.position.x + 150.0, sm.end.y - 150.0)
 	var ao: Vector2 = aim_o if aim_id != -1 else Vector2(sm.end.x - 190.0, sm.end.y - 150.0)
-	draw_arc(mo, 64.0, 0.0, TAU, 32, ring, 4.0)
-	draw_circle(mo + g.touch_move * 64.0, 28.0, Color(1, 1, 1, 0.35))
-	draw_arc(ao, 64.0, 0.0, TAU, 32, Color(1.0, 0.85, 0.3, 0.4), 4.0)
-	draw_circle(ao + g.touch_aim * 50.0, 28.0, Color(1.0, 0.85, 0.3, 0.45))
+	var sk: float = _stick_k()
+	draw_arc(mo, 64.0 * sk, 0.0, TAU, 32, ring, 4.0)
+	draw_circle(mo + g.touch_move * 64.0 * sk, 28.0 * sk, Color(1, 1, 1, 0.35))
+	draw_arc(ao, 64.0 * sk, 0.0, TAU, 32, Color(1.0, 0.85, 0.3, 0.4), 4.0)
+	draw_circle(ao + g.touch_aim * 50.0 * sk, 28.0 * sk, Color(1.0, 0.85, 0.3, 0.45))
 	if g.has_dash():
 		var ready: bool = g.dash_cd <= 0.0
 		draw_circle(dash_c, 46.0, Color(0.22, 0.78, 0.91, 0.5 if ready else 0.2))

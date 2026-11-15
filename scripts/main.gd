@@ -11,7 +11,7 @@ const WorldView := preload("res://scripts/world_view.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VERSION := "0.1.2"
+const VERSION := "0.2.0"
 const T := 64.0
 const PR := 17.0
 const MAX_BULLETS := 700
@@ -22,6 +22,11 @@ const STATS: Array[String] = ["damage", "rate", "speed", "range"]
 const STAT_NAMES: Dictionary = {"damage": "Power", "rate": "Fire rate", "speed": "Speed", "range": "Range"}
 const DIFF_NAMES: Array[String] = ["Relaxed", "Normal", "Hard"]
 const SPEEDS: Array[int] = [100, 85, 70, 50]
+const AIM_NAMES: Array[String] = ["Off", "Light", "Strong", "Auto fire"]
+const SHAKE_NAMES: Array[String] = ["Off", "Low", "Full"]
+const SHAKE_K: Array[float] = [0.0, 0.4, 1.0]
+const STICK_NAMES: Array[String] = ["Small", "Medium", "Large"]
+const STICK_K: Array[float] = [0.8, 1.0, 1.3]
 const TILE_FLOOR := 0
 const TILE_WALL := 1
 const TILE_WATER := 2
@@ -44,6 +49,7 @@ var save: Dictionary = {
 	"finds": [], "flags": [], "seen": {},
 	"defeats": 0, "kills": 0, "play_s": 0.0, "boss_s": 0.0,
 	"difficulty": 1, "auto_aim": false, "speed_idx": 0, "invincible": false, "music": true, "sfx": true, "show_fps": false,
+	"aim_assist": 1, "minimap": true, "shake": 2, "rumble": true, "stick_size": 1,
 }
 var store: SaveStore
 var bridge: TestBridge
@@ -99,6 +105,9 @@ var touch_dash: bool = false
 var touch_visible: bool = false
 var mouse_active: bool = false
 var mouse_down: bool = false
+var using_pad: bool = false           # last input came from a controller
+var pad_device: int = -1
+var rumble_count: int = 0
 var want_dash: bool = false
 var audio_ok: bool = false
 var firing: bool = false
@@ -152,7 +161,8 @@ func _ready() -> void:
 	store = SaveStore.new("user://tiny_tailwind.json")
 	store.limits = {"xp": [0, 100000], "level": [1, 99], "points": [0, 99], "st_damage": [0, STAT_MAX], "st_rate": [0, STAT_MAX],
 		"st_speed": [0, STAT_MAX], "st_range": [0, STAT_MAX], "defeats": [0, 1000000], "kills": [0, 10000000],
-		"play_s": [0.0, 1.0e9], "boss_s": [0.0, 1.0e7], "difficulty": [0, 2], "speed_idx": [0, SPEEDS.size() - 1]}
+		"play_s": [0.0, 1.0e9], "boss_s": [0.0, 1.0e7], "difficulty": [0, 2], "speed_idx": [0, SPEEDS.size() - 1],
+		"aim_assist": [0, 3], "shake": [0, 2], "stick_size": [0, 2]}
 	var args: PackedStringArray = OS.get_cmdline_user_args()
 	bot_mode = args.has("--bot") or args.has("--reach")
 	if bot_mode:
@@ -176,6 +186,7 @@ func _ready() -> void:
 	_make_audio()
 	if OS.has_feature("mobile"):
 		Engine.max_fps = 60
+	Input.joy_connection_changed.connect(_on_joy_changed)
 
 	var cp: Array = cp_pos[str(save["cp"])]
 	_load_map(str(cp[0]), cp[1])
@@ -226,6 +237,9 @@ func _clean_save() -> void:
 	save["flags"] = flags
 	if not cp_pos.has(str(save["cp"])):
 		save["cp"] = "m_glade"
+	if bool(save["auto_aim"]):
+		save["auto_aim"] = false          # v0.1 on/off auto aim becomes the Auto fire level. The old key stays (G5.6)
+		save["aim_assist"] = 3
 	var seen: Dictionary = {}
 	var maps: Dictionary = world["maps"]
 	for mid: Variant in (save["seen"] as Dictionary).keys():
@@ -395,6 +409,9 @@ func shot_interval() -> float:
 func move_speed() -> float:
 	return 300.0 + 20.0 * float(stat("speed"))
 
+func shot_size() -> float:
+	return 9.0 + float(stat("damage")) * 0.8
+
 func shot_range() -> float:
 	return 430.0 + 55.0 * float(stat("range"))
 
@@ -560,14 +577,32 @@ func _notification(what: int) -> void:
 		write_save()
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST and hud != null:
 		hud.toggle_menu()
+	# auto pause: leaving the game opens the Menu, so nothing happens while you are away
+	if (what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED) and hud != null and phase == Phase.PLAY and not paused and not bot_mode:
+		hud.toggle_menu()
+
+func _on_joy_changed(device: int, connected: bool) -> void:
+	# a controller that drops out mid-play opens the Menu
+	if not connected and device == pad_device and phase == Phase.PLAY and not paused and hud != null and not bot_mode:
+		hud.toggle_menu()
+
+func rumble(weak: float, strong: float, secs: float) -> void:
+	if bot_mode or not bool(save["rumble"]) or not using_pad or pad_device < 0:
+		return
+	rumble_count += 1
+	Input.start_joy_vibration(pad_device, weak, strong, secs)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch or event is InputEventScreenDrag:
 		_first_input()
+		using_pad = false
 		touch_visible = true
 		mouse_active = false
 	elif event is InputEventKey or event is InputEventJoypadButton:
 		_first_input()
+		using_pad = event is InputEventJoypadButton
+		if using_pad:
+			pad_device = event.device
 		touch_visible = false
 		touch_move = Vector2.ZERO
 		touch_aim = Vector2.ZERO
@@ -575,6 +610,8 @@ func _input(event: InputEvent) -> void:
 			mouse_active = false
 	elif event is InputEventJoypadMotion:
 		if absf((event as InputEventJoypadMotion).axis_value) > 0.5:
+			using_pad = true
+			pad_device = event.device
 			touch_visible = false
 			mouse_active = false
 	elif event is InputEventMouse and event.device != InputEvent.DEVICE_ID_EMULATION:
@@ -631,7 +668,8 @@ func _process(delta: float) -> void:
 	cam_look = cam_look.lerp(lead, 1.0 - exp(-delta * 3.0))
 	cam.position = cam.position.lerp(_cam_target(), 1.0 - exp(-delta * 10.0))
 	shake = maxf(0.0, shake - delta * 30.0)
-	cam.offset = Vector2(rng.randf_range(-shake, shake), rng.randf_range(-shake, shake)) if shake > 0.1 else Vector2.ZERO
+	var sk: float = shake * SHAKE_K[int(save["shake"])]
+	cam.offset = Vector2(rng.randf_range(-sk, sk), rng.randf_range(-sk, sk)) if sk > 0.1 else Vector2.ZERO
 	view.redraw()
 	hud.queue_redraw()
 	proc_ms = lerpf(proc_ms, float(Time.get_ticks_usec() - t_in) / 1000.0, 0.1)
@@ -689,6 +727,7 @@ func _step_player(dt: float) -> void:
 		mv = touch_move
 	var aim: Vector2 = Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
 	firing = false
+	var stick_aim: bool = false
 	if bot_mode:
 		mv = bot.move
 		if bot.fire:
@@ -699,15 +738,20 @@ func _step_player(dt: float) -> void:
 	elif aim.length_squared() > 0.06:
 		aim_dir = aim.normalized()
 		firing = true
+		stick_aim = true
 	elif touch_aim.length_squared() > 0.04:
 		aim_dir = touch_aim.normalized()
 		firing = true
+		stick_aim = true
 	elif mouse_active:
 		var to_mouse: Vector2 = get_global_mouse_position() - ppos
 		if to_mouse.length_squared() > 36.0:
 			aim_dir = to_mouse.normalized()
 		firing = mouse_down
-	if bool(save["auto_aim"]) and not bot_mode:
+	var assist: int = int(save["aim_assist"])
+	if assist > 0 and assist < 3 and stick_aim and not bot_mode:
+		aim_dir = _assist_aim(aim_dir, assist)
+	if assist == 3 and not bot_mode:
 		var tgt: Enemy = nearest_enemy(shot_range() * 1.05)
 		if tgt != null:
 			aim_dir = (tgt.pos - ppos).normalized()
@@ -729,6 +773,7 @@ func _step_player(dt: float) -> void:
 		dash_cd = 0.9
 		dash_from = ppos
 		sfx("dash", -8.0)
+		rumble(0.25, 0.0, 0.08)
 		for i: int in 8:
 			spark(ppos, -dash_dir * rng.randf_range(40.0, 160.0) + Vector2(rng.randf_range(-60, 60), rng.randf_range(-60, 60)), 0.35, 5.0, Color(0.55, 0.95, 1.0))
 	want_dash = false
@@ -773,7 +818,7 @@ func _step_player(dt: float) -> void:
 	if firing and fire_cd <= 0.0:
 		fire_cd = shot_interval()
 		var life: float = shot_range() / 780.0
-		shoot(1, ppos + aim_dir * 20.0, aim_dir * 780.0 + pvel * 0.15, life, shot_damage(), 6.0 + float(stat("damage")) * 0.6)
+		shoot(1, ppos + aim_dir * 20.0, aim_dir * 780.0 + pvel * 0.15, life, shot_damage(), shot_size())
 		shoot_alt += 1
 		if shoot_alt % 2 == 0:
 			sfx("shoot", -17.0)
@@ -788,6 +833,28 @@ func _corner_nudge(np: Vector2, side: Vector2, step: float, dashing: bool) -> fl
 			if not blocked(np + side * n * s, PR, true, not dashing) and not blocked(ppos + off, PR, true, not dashing):
 				return minf(n, step) * s
 	return 0.0
+
+## Aim assist for sticks and touch: bends the aim toward the enemy closest to where you point.
+## Light pulls 60% of the way within about 12 degrees. Strong pulls all the way within about 24 degrees.
+func _assist_aim(dir: Vector2, level: int) -> Vector2:
+	var cone: float = 0.21 if level == 1 else 0.42
+	var pull: float = 0.6 if level == 1 else 1.0
+	var best: Enemy = null
+	var best_a: float = cone
+	var r2: float = shot_range() * shot_range()
+	for e: Enemy in enemies:
+		if not e.alive or not e.awake or e.dormant:
+			continue
+		var to: Vector2 = e.pos - ppos
+		if to.length_squared() > r2:
+			continue
+		var a: float = absf(dir.angle_to(to))
+		if a < best_a:
+			best_a = a
+			best = e
+	if best == null:
+		return dir
+	return dir.slerp((best.pos - ppos).normalized(), pull)
 
 func _over_rift(p: Vector2) -> bool:
 	return tile_at(int(floor(p.x / T)), int(floor(p.y / T))) == TILE_RIFT
@@ -811,6 +878,7 @@ func hurt_player(dmg: int) -> void:
 	hurt_flash = 0.25
 	shake = 9.0
 	sfx("hurt")
+	rumble(0.4, 0.7, 0.2)
 	if bool(save["invincible"]):
 		return
 	hp -= dmg * (2 if difficulty() == 2 else 1)
@@ -960,6 +1028,7 @@ func spend_point(st: String) -> bool:
 func damage_enemy(e: Enemy, dmg: float, at: Vector2) -> void:
 	e.hp -= dmg
 	e.flash = 0.1
+	e.bar_t = 2.5
 	e.awake = true
 	spark(at, Vector2.from_angle(rng.randf() * TAU) * 120.0, 0.2, 4.0, Color(1, 1, 0.85))
 	if e.hp > 0.0:
@@ -1002,6 +1071,7 @@ func _boss_down() -> void:
 			b_kind[i] = 0
 	shake = 16.0
 	sfx("boss")
+	rumble(0.6, 1.0, 0.5)
 	if float(save["boss_s"]) <= 0.0 or boss_t < float(save["boss_s"]):
 		save["boss_s"] = boss_t
 	_check_arena("d_boss")
@@ -1029,6 +1099,7 @@ func _step_enemies(dt: float) -> void:
 			e.awake = false
 			continue
 		e.flash = maxf(0.0, e.flash - dt)
+		e.bar_t = maxf(0.0, e.bar_t - dt)
 		e.ang += dt
 		var dn: Vector2 = to / maxf(1.0, sqrt(d2))
 		var v: Vector2 = Vector2.ZERO
@@ -1248,7 +1319,7 @@ func _test_state() -> Dictionary:
 		"finds": (save["finds"] as Array).size(), "level": int(save["level"]), "xp": int(save["xp"]), "points": int(save["points"]),
 		"alive": alive, "awake": awake, "shots": b_live, "menu": hud.menu_open, "tab": hud.tab, "touch": touch_visible,
 		"dash": has_dash(), "flags": save["flags"], "cp": str(save["cp"]), "arena": active_arena, "kills": int(save["kills"]),
-		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
+		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "aim_assist": int(save["aim_assist"]), "mini": hud.mini_shown(), "rumbles": rumble_count, "shot_r": shot_size(), "minimap": bool(save["minimap"]), "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
 
 func _test_cmd(cmd: String) -> void:
 	var maps: Dictionary = world["maps"]
@@ -1292,3 +1363,10 @@ func _test_cmd(cmd: String) -> void:
 				damage_enemy(boss, 100000.0, boss.pos)
 		"end":
 			hud.close_end()
+		"low":
+			hp = 1
+		"focus_out":
+			_notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+		_:
+			if cmd.begins_with("set_"):
+				hud._on_setting(cmd.substr(4))

@@ -293,6 +293,8 @@ func _draw() -> void:
 	for e: Enemy in g.enemies:
 		if e.alive and vr.has_point(e.pos):
 			_enemy(e, t)
+			if e.bar_t > 0.0 and e != g.boss and e.hp < e.max_hp:
+				_bar(e)
 	# ship
 	if g.phase != g.Phase.DEFEAT:
 		_ship(t)
@@ -304,12 +306,15 @@ func _draw() -> void:
 		var bp: Vector2 = g.b_pos[i]
 		var br: float = g.b_r[i]
 		if bk == 1:
-			draw_circle(bp, br + 2.0, Color("3ad0e8"))
-			draw_circle(bp, br - 1.0, Color("fffbe0"))
+			var tail: Vector2 = bp - (g.b_vel[i] as Vector2) * 0.022
+			draw_line(tail, bp, Color(0.23, 0.82, 0.91, 0.5), br * 1.3)
+			draw_circle(bp, br + 3.0, Color("3ad0e8"))
+			draw_circle(bp, br - 0.5, Color("fffbe0"))
 		else:
-			draw_circle(bp, br + 2.5, Color("5a1040"))
-			draw_circle(bp, br, Color("ff5fb0"))
-			draw_circle(bp, br * 0.45, Color.WHITE)
+			var vr2: float = br * 1.3       # drawn bigger than the hit size: easy to see and fair to dodge
+			draw_circle(bp, vr2 + 3.0, Color("5a1040"))
+			draw_circle(bp, vr2, Color("ff5fb0"))
+			draw_circle(bp, vr2 * 0.45, Color.WHITE)
 	# sparks
 	for i: int in g.MAX_PARTS:
 		var life: float = g.p_life[i]
@@ -336,6 +341,13 @@ func _star(ci: CanvasItem, p: Vector2, r1: float, r2: float, rot: float, col: Co
 		var r: float = r1 if i % 2 == 0 else r2
 		pts.append(p + Vector2.from_angle(rot + TAU * float(i) / 10.0 - PI / 2.0) * r)
 	ci.draw_colored_polygon(pts, col)
+
+func _bar(e: Enemy) -> void:
+	var w: float = e.r * 2.0 + 8.0
+	var a: float = minf(1.0, e.bar_t)
+	var o := Vector2(e.pos.x - w * 0.5, e.pos.y - e.r - 16.0)
+	draw_rect(Rect2(o - Vector2(2, 2), Vector2(w + 4.0, 9.0)), Color(0.05, 0.08, 0.16, 0.85 * a))
+	draw_rect(Rect2(o, Vector2(w * clampf(e.hp / e.max_hp, 0.0, 1.0), 5.0)), Color(1.0, 0.42, 0.42, a))
 
 func _eyes(p: Vector2, look: Vector2, gap: float, size: float) -> void:
 	for sgn: float in [-1.0, 1.0]:

@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.1.2. Brian decides the order.
+Updated 2026-11-15 for v0.2.0. Brian decides the order.
 
 ## Done
 
@@ -16,10 +16,12 @@ Updated 2026-11-15 for v0.1.2. Brian decides the order.
 
 - v0.1.1 (2026-11-15). Brian could not fly the ship with the controller in a browser on his ROG handheld. The D-pad now flies the ship. The title card and Settings name the controller the game sees. The game page has handheld steps. Cause found by Brian: the handheld was in PC mode. Gamepad mode fixed it.
 - v0.1.2 (2026-11-15). Brian found movement very choppy. The map is now drawn once, so the game's own work per frame dropped from about 20 ms to under 2 ms in a slow test browser. The ship eases into moves, slides around wall corners and the camera eases. A Frame rate setting shows the frames a second.
+- v0.2.0 (2026-11-15), the Feel release. Brian found v0.1.2 much smoother and asked for bigger shots, then for best judgment on quality of life. Bigger shots, aim assist levels, a corner mini map, enemy health bars, a low health warning, auto pause, screen shake, rumble and touch stick settings.
 
 ## Now
 
-- Brian plays v0.1.0 and reports how it feels. Release 1 below starts from his notes.
+- Brian plays v0.2.0 and reports how the shots, aim assist and mini map feel.
+- Next is release 2, coins and the shop, unless Brian picks something else.
 
 ## Asked for by Brian, not built yet
 
@@ -42,7 +44,7 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
 
 Suggested 2026-11-15. Each has a place in the roadmap. Brian can move or drop any of them.
 
-13. Corner mini map, with a toggle.
+13. Corner mini map, with a toggle. Done in v0.2.0.
 14. Fast travel between checkpoints.
 15. Lost friends to rescue. Each one opens something in a home village: the shop, the hangar, the paint stall.
 16. More gate abilities: a boost that skims water, a bomb that opens cracked walls and a shield.
@@ -52,14 +54,14 @@ Suggested 2026-11-15. Each has a place in the roadmap. Brian can move or drop an
 20. Boss rush, unlocked after the last boss.
 21. Stamp card of achievements.
 22. Three save slots.
-23. Controller rumble and a screen shake setting.
-24. Aim assist strength setting, between off and full auto aim.
+23. Controller rumble and a screen shake setting. Done in v0.2.0.
+24. Aim assist strength setting, between off and full auto aim. Done in v0.2.0.
 25. Scenery that breaks: bushes, pots and crates.
 26. Day and night, and weather per biome.
 27. Music per biome and a theme per boss.
 28. A short story intro and friends who talk.
 29. Find hints: a soft ping when a find is near.
-30. Touch settings: stick size, left-handed layout and a fixed stick option.
+30. Touch settings: stick size, left-handed layout and a fixed stick option. Done in v0.2.0 (stick size only. Left-handed and fixed sticks still open).
 31. Color-safe shot colors for color blind players.
 32. Christmas theme toggle (G4.5).
 33. A helper drone that shoots with you.
@@ -73,7 +75,7 @@ Order of thought: feel first, then the money loop, then things to collect and we
 
 | Release | Theme | What is in it | Backlog items |
 |---|---|---|---|
-| 1. v0.2.0 | Feel | Fixes from Brian's playtest. Tuning of speed, shots and enemies. Better hit and hurt feedback. Aim assist strength, rumble, shake setting, touch settings, corner mini map. Still one biome | 13, 23, 24, 30 |
+| 1. v0.2.0, done | Feel | Fixes from Brian's playtest. Tuning of speed, shots and enemies. Better hit and hurt feedback. Aim assist strength, rumble, shake setting, touch settings, corner mini map. Still one biome | 13, 23, 24, 30 |
 | 2. v0.3.0 | Coins and the shop | Coins hidden around the biome. Trees, bushes and enemies drop coins when shot. A shop with items to buy. Scenery that breaks | 7, 8, 9, 25 |
 | 3. v0.4.0 | Weapons | New weapon types to find, such as a spread shot, a piercing shot and a homing shot. Weapon upgrades to find. A charged super shot | 5, 6, 17 |
 | 4. v0.5.0 | Secrets | Hidden rooms and cracked walls. Finds in the first biome rise to 30. Find hints. Enemy journal. Elite enemies | 3, 18, 29, 36, part of 2 |
@@ -104,6 +106,7 @@ Counting toward 300 collectibles: 30 per biome across 10 biomes.
 - 2026-11-15: one biome only for the first versions, until the gameplay is good. The meadow keeps its cave and boss.
 - 2026-11-15: add the game to The Game Shelf with every update, in the same format as the other games.
 - 2026-11-15: the name is Tiny Tailwind.
+- 2026-11-15: bigger shots, and best judgment on quality of life for the next release.
 - 2026-11-15: backlog items 1 to 12, a list of suggested items and a plan over 10 releases.
 
 ## Judgment calls made for v0.1.0 (Brian can change any)

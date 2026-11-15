@@ -26,7 +26,7 @@ async def main():
                 await r.pad("RIGHT", 300); s = await r.state(); r.check(s["focus"] == name, "D-pad right moves the focus to %s (%s)" % (name, s["focus"]))
                 await r.pad("A", 300); s = await r.wait_for(lambda s: s["tab"] == tab, 10, "page " + tab); r.check(s["tab"] == tab, "A opens the %s page" % name)
             await r.shot("03_settings")
-            await r.pad("DOWN", 300); s = await r.state(); r.check(s["focus"].startswith("Difficulty") or s["focus"].startswith("Auto aim"), "D-pad down moves into the Settings buttons (%s)" % s["focus"])
+            await r.pad("DOWN", 300); s = await r.state(); r.check(s["focus"].startswith("Difficulty") or s["focus"].startswith("Aim assist"), "D-pad down moves into the Settings buttons (%s)" % s["focus"])
             f0 = s["focus"]; d0, a0 = s["difficulty"], s["focus"]
             await r.pad("A", 300); await pg.wait_for_timeout(400); s = await r.state(); r.check(s["focus"] != f0, "A changes the focused setting: %s to %s" % (f0, s["focus"])); await r.shot("04_setting_changed")
             await r.pad("B", 300); s = await r.wait_for(lambda s: not s["menu"], 10, "Menu closes"); r.check(not s["menu"] and not s["paused"], "B closes the Menu")
@@ -40,6 +40,7 @@ async def main():
                 n0 = (await r.state())["dashes"]
                 await r.pad(b, 900, 300); s = await r.state(); r.check(s["dashes"] == n0 + 1, "%s dashes (%d to %d)" % (b, n0, s["dashes"]))
                 await pg.evaluate("() => window.__pad_axes(0, 0)")
+            s = await r.state(); r.check(s["rumbles"] >= 3, "the controller is asked to rumble on each dash (%d)" % s["rumbles"])
             # back to the title card from the Menu row, then in again
             await r.pad("MENU", 300); await r.wait_for(lambda s: s["menu"], 10, "Menu opens")
             for i in range(5):
