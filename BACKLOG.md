@@ -116,6 +116,7 @@ Item 37 rides along with the art it covers: ship and add-on sheets in Release 5,
 - 2026-11-15: a new default ship shape, the Swallow glider, released on its own as v0.2.1, then Release 2.
 - 2026-11-15: backlog items 1 to 12, a list of suggested items and a plan over 10 releases.
 - 2026-11-15: a reference spec sheet for the Swallow glider (Gemini views, then a Meshy 3D model), and spec sheets for enemies, new ships and more added as item 37.
+- 2026-11-15: render the Meshy 3D Swallow ship into sprites for the 2D game. This is an exception to the rule that all art is drawn in code. Not built yet.
 
 ## Judgment calls made for v0.1.0 (Brian can change any)
 
