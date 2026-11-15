@@ -4,7 +4,7 @@ Standards: `GAME_STANDARDS.md` (rule ids start with G) and `ENGINEERING_STANDARD
 This file lists where this game does something else, and why. A rule not listed here applies in full.
 Order of authority: Brian in the chat, then this file, then the standards.
 
-Last reviewed: v0.2.0 (2026-11-15).
+Last reviewed: v0.2.1 (2026-11-15).
 Checked against: game-standards version 2026-11-15 with G5.8 (commit b2c2865). Shared kit 1.5.0 (`common.lock`).
 
 On 2026-11-15 Brian said a shooter has enemies and dying, that an overrides file should cover what does not fit, and to use best judgment for the MVP. Rows agreed under that instruction say "delegated". Brian can change any of them.

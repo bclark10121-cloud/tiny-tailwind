@@ -425,22 +425,38 @@ func _enemy(e: Enemy, t: float) -> void:
 				draw_circle(p + look * 8.0, 11.0, Color("20202c"))
 				draw_circle(p + look * 8.0 + Vector2(-3, -3), 3.5, Color.WHITE)
 
+## The Swallow glider (v0.2.1): swept wings and a forked tail, drawn facing the ship's eased heading.
+const GLIDER: Array[Vector2] = [Vector2(40, 0), Vector2(2, -10), Vector2(-26, -38), Vector2(-14, -8), Vector2(-36, -14), Vector2(-24, 0),
+	Vector2(-36, 14), Vector2(-14, 8), Vector2(-26, 38), Vector2(2, 10)]
+const GLIDER_K := 0.7
+
 func _ship(t: float) -> void:
 	var p: Vector2 = g.ppos
-	var a: Vector2 = g.aim_dir
-	var side: Vector2 = a.orthogonal()
 	if g.invuln > 0.0 and g.dash_t <= 0.0 and int(t * 20.0) % 2 == 0:
 		return
-	draw_circle(p + Vector2(0, 14), 14.0, Color(0, 0, 0, 0.2))
-	var mvn: Vector2 = g.pvel.normalized() if g.pvel.length_squared() > 100.0 else a
-	var tail: float = 20.0 + minf(22.0, g.pvel.length() * 0.05) + sin(t * 22.0) * 3.0
-	draw_colored_polygon(PackedVector2Array([p - mvn * tail - mvn * 8.0, p + mvn.orthogonal() * 12.0, p - mvn.orthogonal() * 12.0]), Color("ffb347"))
-	draw_colored_polygon(PackedVector2Array([p - mvn * tail * 0.6 - mvn * 6.0, p + mvn.orthogonal() * 7.0, p - mvn.orthogonal() * 7.0]), Color("fff0a8"))
-	draw_circle(p, 19.0, Color("1f3b63"))
-	draw_circle(p, 16.0, Color("f7f3e6") if g.hurt_flash <= 0.0 else Color("ff8a8a"))
-	draw_colored_polygon(PackedVector2Array([p + a * 27.0, p + a * 9.0 + side * 9.0, p + a * 9.0 - side * 9.0]), Color("1f3b63"))
-	draw_colored_polygon(PackedVector2Array([p + a * 23.0, p + a * 10.0 + side * 6.0, p + a * 10.0 - side * 6.0]), Color("38c6e8"))
-	draw_circle(p + a * 2.0, 7.0, Color("38c6e8"))
-	draw_circle(p + a * 2.0 + Vector2(-2, -2), 2.5, Color.WHITE)
+	var fwd: Vector2 = Vector2.from_angle(g.ship_ang)
+	var side: Vector2 = fwd.orthogonal()
+	var to_world: Callable = func(v: Vector2) -> Vector2: return p + fwd * v.x * GLIDER_K + side * v.y * GLIDER_K
+	draw_circle(p + Vector2(0, 16), 15.0, Color(0, 0, 0, 0.2))
+	# thruster flame from the forked tail, longer when moving
+	var flame: float = 8.0 + minf(18.0, g.pvel.length() * 0.045) + sin(t * 22.0) * 3.0
+	var tail: Vector2 = to_world.call(Vector2(-22, 0))
+	draw_colored_polygon(PackedVector2Array([tail + side * 6.5, tail - side * 6.5, tail - fwd * (flame + 9.0)]), Color("ffb347"))
+	draw_colored_polygon(PackedVector2Array([tail + side * 3.4, tail - side * 3.4, tail - fwd * (flame * 0.65 + 5.0)]), Color("fff0a8"))
+	# body and outline
+	var pts := PackedVector2Array()
+	for v: Vector2 in GLIDER:
+		pts.append(to_world.call(v))
+	draw_colored_polygon(pts, Color("f7f3e6") if g.hurt_flash <= 0.0 else Color("ff8a8a"))
+	var ring := PackedVector2Array(pts)
+	ring.append(pts[0])
+	draw_polyline(ring, Color("1f3b63"), 2.4, true)
+	# wing stripes and cockpit
+	draw_line(to_world.call(Vector2(0, -7)), to_world.call(Vector2(-18, -29)), Color("38c6e8"), 2.5, true)
+	draw_line(to_world.call(Vector2(0, 7)), to_world.call(Vector2(-18, 29)), Color("38c6e8"), 2.5, true)
+	var cp: Vector2 = to_world.call(Vector2(14, 0))
+	draw_circle(cp, 6.0, Color("1f3b63"))
+	draw_circle(cp, 4.5, Color("38c6e8"))
+	draw_circle(cp - side * 1.5 - fwd * 1.0, 1.6, Color.WHITE)
 	if g.dash_t > 0.0:
-		draw_arc(p, 25.0, 0.0, TAU, 20, Color(0.6, 0.95, 1.0, 0.8), 3.0)
+		draw_arc(p, 27.0, 0.0, TAU, 20, Color(0.6, 0.95, 1.0, 0.8), 3.0)

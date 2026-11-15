@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.2.0. Brian decides the order.
+Updated 2026-11-15 for v0.2.1. Brian decides the order.
 
 ## Done
 
@@ -17,11 +17,11 @@ Updated 2026-11-15 for v0.2.0. Brian decides the order.
 - v0.1.1 (2026-11-15). Brian could not fly the ship with the controller in a browser on his ROG handheld. The D-pad now flies the ship. The title card and Settings name the controller the game sees. The game page has handheld steps. Cause found by Brian: the handheld was in PC mode. Gamepad mode fixed it.
 - v0.1.2 (2026-11-15). Brian found movement very choppy. The map is now drawn once, so the game's own work per frame dropped from about 20 ms to under 2 ms in a slow test browser. The ship eases into moves, slides around wall corners and the camera eases. A Frame rate setting shows the frames a second.
 - v0.2.0 (2026-11-15), the Feel release. Brian found v0.1.2 much smoother and asked for bigger shots, then for best judgment on quality of life. Bigger shots, aim assist levels, a corner mini map, enemy health bars, a low health warning, auto pause, screen shake, rumble and touch stick settings.
+- v0.2.1 (2026-11-15). Brian asked for a different default ship shape and picked the Swallow glider from four options. The ship turns smoothly toward the aim. New app icon.
 
 ## Now
 
-- Brian plays v0.2.0 and reports how the shots, aim assist and mini map feel.
-- Next is release 2, coins and the shop, unless Brian picks something else.
+- Release 2, coins and the shop (v0.3.0). Brian said to start it after the new ship.
 
 ## Asked for by Brian, not built yet
 
@@ -107,6 +107,7 @@ Counting toward 300 collectibles: 30 per biome across 10 biomes.
 - 2026-11-15: add the game to The Game Shelf with every update, in the same format as the other games.
 - 2026-11-15: the name is Tiny Tailwind.
 - 2026-11-15: bigger shots, and best judgment on quality of life for the next release.
+- 2026-11-15: a new default ship shape, the Swallow glider, released on its own as v0.2.1, then Release 2.
 - 2026-11-15: backlog items 1 to 12, a list of suggested items and a plan over 10 releases.
 
 ## Judgment calls made for v0.1.0 (Brian can change any)

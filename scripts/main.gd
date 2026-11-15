@@ -11,7 +11,7 @@ const WorldView := preload("res://scripts/world_view.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VERSION := "0.2.0"
+const VERSION := "0.2.1"
 const T := 64.0
 const PR := 17.0
 const MAX_BULLETS := 700
@@ -94,7 +94,8 @@ var end_t: float = -1.0
 var time: float = 0.0
 var seen_t: float = 0.0
 var shake: float = 0.0
-var cam_look: Vector2 = Vector2.ZERO  # smoothed camera lead toward aim and travel
+var cam_look: Vector2 = Vector2.ZERO
+var ship_ang: float = 0.0             # drawn heading, eased toward the aim so turns look smooth  # smoothed camera lead toward aim and travel
 var proc_ms: float = 0.0
 var hurt_flash: float = 0.0
 
@@ -666,6 +667,7 @@ func _process(delta: float) -> void:
 	# the camera leads a little toward where the ship aims and travels, eased so it never jumps
 	var lead: Vector2 = (aim_dir * 48.0 if firing else Vector2.ZERO) + pvel * 0.1
 	cam_look = cam_look.lerp(lead, 1.0 - exp(-delta * 3.0))
+	ship_ang = lerp_angle(ship_ang, aim_dir.angle(), 1.0 - exp(-delta * 22.0))
 	cam.position = cam.position.lerp(_cam_target(), 1.0 - exp(-delta * 10.0))
 	shake = maxf(0.0, shake - delta * 30.0)
 	var sk: float = shake * SHAKE_K[int(save["shake"])]
