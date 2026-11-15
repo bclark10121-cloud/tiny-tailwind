@@ -19,6 +19,8 @@ async def main():
             await r.pad("A"); s = await r.wait_phase([PLAY], 20); r.check(s.get("phase") == PLAY, "A presses Start")
             x0 = s["x"]; await r.pad_stick(1.0, 0.0, 2000); s = await r.state(); r.check(s["x"] > x0 + 60, "left stick flies the ship: x %.0f to %.0f" % (x0, s["x"]))
             r.check(not s["touch"], "touch controls stay hidden with a controller")
+            r.check(s["pads"] >= 1 and s["pad_line"].startswith("Controller: ") and "none seen" not in s["pad_line"], "the game names the controller it sees: %s" % s["pad_line"])
+            x0 = s["x"]; await r.pad("LEFT", 1800, 300); s = await r.state(); r.check(s["x"] < x0 - 60, "D-pad flies the ship: x %.0f to %.0f" % (x0, s["x"]))
             await r.pad("MENU"); s = await r.wait_for(lambda s: s["menu"], 10, "Menu opens"); r.check(s["menu"] and s["paused"] and s["focus"] == "Ship", "Menu button opens the Menu with Ship in focus (%s)" % s["focus"]); await r.shot("02_menu_ship")
             for name, tab in (("Journal", "journal"), ("Map", "map"), ("Settings", "settings")):
                 await r.pad("RIGHT", 300); s = await r.state(); r.check(s["focus"] == name, "D-pad right moves the focus to %s (%s)" % (name, s["focus"]))

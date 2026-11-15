@@ -4,7 +4,7 @@ Standards: `GAME_STANDARDS.md` (rule ids start with G) and `ENGINEERING_STANDARD
 This file lists where this game does something else, and why. A rule not listed here applies in full.
 Order of authority: Brian in the chat, then this file, then the standards.
 
-Last reviewed: v0.1.0 (2026-11-15).
+Last reviewed: v0.1.1 (2026-11-15).
 Checked against: game-standards version 2026-11-15 with G5.8 (commit b2c2865). Shared kit 1.5.0 (`common.lock`).
 
 On 2026-11-15 Brian said a shooter has enemies and dying, that an overrides file should cover what does not fit, and to use best judgment for the MVP. Rows agreed under that instruction say "delegated". Brian can change any of them.
@@ -26,6 +26,7 @@ A Proposed row is not in force. The standard applies until Brian agrees.
 ## Open items (rule applies, work not finished)
 
 - G4.2: the four pillars in `CLAUDE.md` are proposed. Brian to confirm.
+- G5.8: Brian reported on 2026-11-15 that the controller did not fly the ship in a browser on his ROG handheld. v0.1.1 adds D-pad flying and a line that names the controller the game sees. The likely cause is the handheld's Desktop control mode. Not confirmed on the device yet.
 - G7.5: not tested on a real phone, a real controller or with sound on. All tests ran headless.
 - E1.2: every declaration is typed. `world_view.gd` and `hud.gd` reach `main.gd` through a plain `Node2D` reference, so those reads are not type checked.
 - E1.3: the HUD checks its message timer every frame. The world redraws every frame while the title card is up. Sleeping enemies are skipped.

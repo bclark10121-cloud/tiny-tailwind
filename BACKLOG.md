@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.1.0. Brian decides the order.
+Updated 2026-11-15 for v0.1.1. Brian decides the order.
 
 ## Done
 
@@ -13,6 +13,8 @@ Updated 2026-11-15 for v0.1.0. Brian decides the order.
   - 8 checkpoints. Defeat costs nothing.
   - Assists: 3 difficulty levels, auto aim, game speed and invincible.
   - Map page, Menu row, title card, end card and a save on the device.
+
+- v0.1.1 (2026-11-15). Brian could not fly the ship with the controller in a browser on his ROG handheld. The D-pad now flies the ship. The title card and Settings name the controller the game sees. The game page has handheld steps.
 
 ## Now
 

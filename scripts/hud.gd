@@ -25,6 +25,8 @@ var journal_head: Label
 var map_ctl: Control
 var set_btns: Dictionary = {}
 var erase_armed: bool = false
+var pad_title: Label
+var pad_settings: Label
 var messages: Array[String] = []
 var msg_t: float = 0.0
 var sm: Rect2 = Rect2()          # safe area in HUD units (E5.3)
@@ -71,6 +73,8 @@ func _ready() -> void:
 	_build_title()
 	_build_end()
 	get_viewport().size_changed.connect(_layout)
+	Input.joy_connection_changed.connect(_on_pad_changed)
+	_on_pad_changed(0, false)
 	_layout()
 
 func _make_theme() -> Theme:
@@ -228,6 +232,9 @@ func _build_settings(holder: Control) -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_child(b)
 		set_btns[id] = b
+	pad_settings = _label("", 18)
+	pad_settings.add_theme_color_override("font_color", Color("9fe8ff"))
+	v.add_child(pad_settings)
 	v.add_child(_label("Assists are here to use. Auto aim points and fires for you. Game speed slows everything. Invincible stops all damage. Defeat never costs anything.", 18))
 
 func _build_title() -> void:
@@ -256,9 +263,12 @@ func _build_title() -> void:
 	v.add_child(what)
 	v.add_child(_label(" ", 8))
 	v.add_child(_label("Keyboard: WASD moves. Mouse or arrow keys aim and fire. Space dashes. Esc opens Menu.", 18))
-	v.add_child(_label("Xbox controller: left stick moves. Right stick aims and fires. A, RB or RT dashes. View or Menu opens the Menu. In menus A chooses and B goes back.", 18))
+	v.add_child(_label("Xbox controller: left stick or D-pad moves. Right stick aims and fires. A, RB or RT dashes. View or Menu opens the Menu. In menus A chooses and B goes back.", 18))
 	v.add_child(_label("Touch: left thumb moves. Right thumb aims and fires. Dash button on the right.", 18))
 	v.add_child(_label("Defeat costs nothing. Assists are in Menu, then Settings.", 18))
+	pad_title = _label("", 18)
+	pad_title.add_theme_color_override("font_color", Color("9fe8ff"))
+	v.add_child(pad_title)
 	v.add_child(_label(" ", 8))
 	start_btn = _button("Start", _on_start)
 	start_btn.custom_minimum_size = Vector2(280, 68)
@@ -465,6 +475,22 @@ func push_message(text: String) -> void:
 		messages.append(text)
 		if messages.size() == 1:
 			msg_t = 2.6
+
+## Says whether the game sees a controller, so a player can tell a game problem from a device setting.
+func pad_text() -> String:
+	var pads: Array[int] = Input.get_connected_joypads()
+	if pads.is_empty():
+		return "Controller: none seen yet. Press any button on it. On a ROG Ally or other Windows handheld, set Control Mode to Gamepad in Command Center."
+	var id: int = pads[0]
+	var known: String = "" if Input.is_joy_known(id) else " (not a standard layout. Buttons may not match)"
+	return "Controller: %s%s" % [Input.get_joy_name(id).left(48), known]
+
+func _on_pad_changed(_device: int, _connected: bool) -> void:
+	var t: String = pad_text()
+	if pad_title != null:
+		pad_title.text = t
+	if pad_settings != null:
+		pad_settings.text = t
 
 func focus_text() -> String:
 	var f: Control = get_viewport().gui_get_focus_owner()

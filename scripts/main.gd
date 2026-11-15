@@ -11,7 +11,7 @@ const WorldView := preload("res://scripts/world_view.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VERSION := "0.1.0"
+const VERSION := "0.1.1"
 const T := 64.0
 const PR := 17.0
 const MAX_BULLETS := 700
@@ -246,6 +246,10 @@ func _setup_input() -> void:
 	_act("aim_right", [KEY_RIGHT], JOY_AXIS_RIGHT_X, 1.0)
 	_act("aim_up", [KEY_UP], JOY_AXIS_RIGHT_Y, -1.0)
 	_act("aim_down", [KEY_DOWN], JOY_AXIS_RIGHT_Y, 1.0)
+	_joy_button("move_left", JOY_BUTTON_DPAD_LEFT)      # the D-pad flies the ship too
+	_joy_button("move_right", JOY_BUTTON_DPAD_RIGHT)
+	_joy_button("move_up", JOY_BUTTON_DPAD_UP)
+	_joy_button("move_down", JOY_BUTTON_DPAD_DOWN)
 	_act("dash", [KEY_SPACE, KEY_SHIFT], JOY_AXIS_TRIGGER_RIGHT, 1.0)
 	_joy_button("dash", JOY_BUTTON_A)
 	_joy_button("dash", JOY_BUTTON_RIGHT_SHOULDER)
@@ -1214,7 +1218,7 @@ func _test_state() -> Dictionary:
 		"finds": (save["finds"] as Array).size(), "level": int(save["level"]), "xp": int(save["xp"]), "points": int(save["points"]),
 		"alive": alive, "awake": awake, "shots": b_live, "menu": hud.menu_open, "tab": hud.tab, "touch": touch_visible,
 		"dash": has_dash(), "flags": save["flags"], "cp": str(save["cp"]), "arena": active_arena, "kills": int(save["kills"]),
-		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
+		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
 
 func _test_cmd(cmd: String) -> void:
 	var maps: Dictionary = world["maps"]

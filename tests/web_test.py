@@ -20,7 +20,8 @@ async def main():
             r.check(await r.state() is None, "no test state without the whole-word ?test flag")
             await r.open(base + "index.html?test")
             s = await r.wait_phase([TITLE], 90); await pg.wait_for_timeout(2500); await r.shot("01_title")
-            r.check(s.get("version") == "0.1.0", "title card up, version %s" % s.get("version"))
+            r.check(s.get("version") == "0.1.1", "title card up, version %s" % s.get("version"))
+            r.check("none seen yet" in s["pad_line"], "with no controller the title card says so")
             await r.key("Enter"); s = await r.wait_phase([PLAY]); await pg.wait_for_timeout(1200); await r.shot("02_start")
             x0 = s["x"]
             await pg.keyboard.down("d"); await pg.keyboard.down("ArrowRight"); fired = await r.wait_for(lambda s: s["shots"] > 0, 10, "a shot in flight"); await pg.wait_for_timeout(2000)
