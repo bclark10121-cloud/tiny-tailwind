@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.1.1. Brian decides the order.
+Updated 2026-11-15 for v0.1.2. Brian decides the order.
 
 ## Done
 
@@ -14,7 +14,8 @@ Updated 2026-11-15 for v0.1.1. Brian decides the order.
   - Assists: 3 difficulty levels, auto aim, game speed and invincible.
   - Map page, Menu row, title card, end card and a save on the device.
 
-- v0.1.1 (2026-11-15). Brian could not fly the ship with the controller in a browser on his ROG handheld. The D-pad now flies the ship. The title card and Settings name the controller the game sees. The game page has handheld steps.
+- v0.1.1 (2026-11-15). Brian could not fly the ship with the controller in a browser on his ROG handheld. The D-pad now flies the ship. The title card and Settings name the controller the game sees. The game page has handheld steps. Cause found by Brian: the handheld was in PC mode. Gamepad mode fixed it.
+- v0.1.2 (2026-11-15). Brian found movement very choppy. The map is now drawn once, so the game's own work per frame dropped from about 20 ms to under 2 ms in a slow test browser. The ship eases into moves, slides around wall corners and the camera eases. A Frame rate setting shows the frames a second.
 
 ## Now
 

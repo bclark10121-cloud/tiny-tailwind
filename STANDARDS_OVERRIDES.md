@@ -4,7 +4,7 @@ Standards: `GAME_STANDARDS.md` (rule ids start with G) and `ENGINEERING_STANDARD
 This file lists where this game does something else, and why. A rule not listed here applies in full.
 Order of authority: Brian in the chat, then this file, then the standards.
 
-Last reviewed: v0.1.1 (2026-11-15).
+Last reviewed: v0.1.2 (2026-11-15).
 Checked against: game-standards version 2026-11-15 with G5.8 (commit b2c2865). Shared kit 1.5.0 (`common.lock`).
 
 On 2026-11-15 Brian said a shooter has enemies and dying, that an overrides file should cover what does not fit, and to use best judgment for the MVP. Rows agreed under that instruction say "delegated". Brian can change any of them.
@@ -26,10 +26,9 @@ A Proposed row is not in force. The standard applies until Brian agrees.
 ## Open items (rule applies, work not finished)
 
 - G4.2: the four pillars in `CLAUDE.md` are proposed. Brian to confirm.
-- G5.8: Brian reported on 2026-11-15 that the controller did not fly the ship in a browser on his ROG handheld. v0.1.1 adds D-pad flying and a line that names the controller the game sees. The likely cause is the handheld's Desktop control mode. Not confirmed on the device yet.
 - G7.5: not tested on a real phone, a real controller or with sound on. All tests ran headless.
 - E1.2: every declaration is typed. `world_view.gd` and `hud.gd` reach `main.gd` through a plain `Node2D` reference, so those reads are not type checked.
-- E1.3: the HUD checks its message timer every frame. The world redraws every frame while the title card is up. Sleeping enemies are skipped.
+- E1.3: the map is drawn once per map and kept (v0.1.2). Moving things, the HUD and the message timer still update every frame, as they must. Sleeping enemies are skipped.
 - E1.4: no node lookups in loops. Met, listed here because it was checked by reading only.
 - E3.1 and E4.6: draw calls and memory are not measured on a device. The whole game draws with rectangles, circles and polygons and loads three music tracks on demand.
 - E5.5 (Proposed rule): the frame step is capped and split into up to three steps. Not checked on a slow phone.
@@ -39,7 +38,7 @@ A Proposed row is not in force. The standard applies until Brian agrees.
 
 Checked on 2026-11-15 by reading the files and by running the checks named in `CLAUDE.md`.
 
-Game standards: G0.3, G0.10, G0.12, G1.1, G1.2, G1.3, G1.4, G1.5, G1.6, G1.7, G1.8, G1.9 (`SECRETS check ok`), G1.10, G1.11, G2.1 to G2.7, G3.1 to G3.5, G4.3 (20 finds, counter, journal, save, messages one third of the way down), G4.6, G5.1, G5.4, G5.5, G5.6, G5.8 (the whole game plays with only an Xbox controller, Xbox button names on the title card and game page, connect steps on the game page, `tests/pad_test.py` prints `errors []`), G6.1, G6.2, G6.3 (signature starts with `5db69ffb`), G6.4, G6.6 (walls, water, rifts and gates all block by tile), G7.2 (`REACH ok 20/20`), G7.3, G7.4, G7.8, G8.1, G8.3, G8.4, G10.2, G10.3 (`COMMON check ok: 1.5.0 b2c2865`), G10.4, G10.8.
+Game standards: G0.3, G0.10, G0.12, G1.1, G1.2, G1.3, G1.4, G1.5, G1.6, G1.7, G1.8, G1.9 (`SECRETS check ok`), G1.10, G1.11, G2.1 to G2.7, G3.1 to G3.5, G4.3 (20 finds, counter, journal, save, messages one third of the way down), G4.6, G5.1, G5.4, G5.5, G5.6, G5.8 (the whole game plays with only an Xbox controller, confirmed by Brian on his ROG handheld in Gamepad mode on 2026-11-15, Xbox button names on the title card and game page, connect steps on the game page, `tests/pad_test.py` prints `errors []`), G6.1, G6.2, G6.3 (signature starts with `5db69ffb`), G6.4, G6.6 (walls, water, rifts and gates all block by tile), G7.2 (`REACH ok 20/20`), G7.3, G7.4, G7.8, G8.1, G8.3, G8.4, G10.2, G10.3 (`COMMON check ok: 1.5.0 b2c2865`), G10.4, G10.8.
 
 Proposed rules the game already follows: G4.8 (review, plan and name check before the build), G4.9 (content as data), G7.6 (the browser test reads the game state), G7.7.
 

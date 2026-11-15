@@ -11,7 +11,7 @@ const WorldView := preload("res://scripts/world_view.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VERSION := "0.1.1"
+const VERSION := "0.1.2"
 const T := 64.0
 const PR := 17.0
 const MAX_BULLETS := 700
@@ -43,7 +43,7 @@ var save: Dictionary = {
 	"st_damage": 0, "st_rate": 0, "st_speed": 0, "st_range": 0,
 	"finds": [], "flags": [], "seen": {},
 	"defeats": 0, "kills": 0, "play_s": 0.0, "boss_s": 0.0,
-	"difficulty": 1, "auto_aim": false, "speed_idx": 0, "invincible": false, "music": true, "sfx": true,
+	"difficulty": 1, "auto_aim": false, "speed_idx": 0, "invincible": false, "music": true, "sfx": true, "show_fps": false,
 }
 var store: SaveStore
 var bridge: TestBridge
@@ -88,6 +88,8 @@ var end_t: float = -1.0
 var time: float = 0.0
 var seen_t: float = 0.0
 var shake: float = 0.0
+var cam_look: Vector2 = Vector2.ZERO  # smoothed camera lead toward aim and travel
+var proc_ms: float = 0.0
 var hurt_flash: float = 0.0
 
 # ---- input ----
@@ -110,6 +112,7 @@ var b_dmg: PackedFloat32Array = PackedFloat32Array()
 var b_r: PackedFloat32Array = PackedFloat32Array()
 var b_next: int = 0
 var b_live: int = 0
+var b_hi: int = 0                    # one past the highest shot slot in use, so loops stop early
 var p_pos: PackedVector2Array = PackedVector2Array()
 var p_vel: PackedVector2Array = PackedVector2Array()
 var p_life: PackedFloat32Array = PackedFloat32Array()
@@ -480,6 +483,7 @@ func _load_map(id: String, spawn: Vector2) -> void:
 	for j: int in MAX_BULLETS:
 		b_kind[j] = 0
 	b_live = 0
+	b_hi = 0
 	for j: int in MAX_PICKS:
 		k_kind[j] = 0
 	for j: int in MAX_PARTS:
@@ -491,6 +495,7 @@ func _load_map(id: String, spawn: Vector2) -> void:
 			seen_now[int(c)] = true
 	ppos = spawn
 	pvel = Vector2.ZERO
+	cam_look = Vector2.ZERO
 	dash_t = 0.0
 	boss_t = 0.0
 	_mark_seen()
@@ -518,7 +523,7 @@ func _mark_seen() -> void:
 
 func _cam_target() -> Vector2:
 	var vs: Vector2 = get_viewport_rect().size
-	var tgt: Vector2 = ppos + aim_dir * (60.0 if firing else 0.0)
+	var tgt: Vector2 = ppos + cam_look
 	var half: Vector2 = vs * 0.5
 	var wpx: float = float(mw) * T
 	var hpx: float = float(mh) * T
@@ -610,8 +615,9 @@ func _process(delta: float) -> void:
 			if bot.finished:
 				get_tree().quit(0 if bot.ok else 1)
 				return
-		view.queue_redraw()
+		view.redraw()
 		return
+	var t_in: int = Time.get_ticks_usec()
 	var cmd: String = bridge.tick(delta, _test_state)
 	if cmd != "":
 		_test_cmd(cmd)
@@ -620,12 +626,15 @@ func _process(delta: float) -> void:
 	var steps: int = clampi(int(ceil(dt / (1.0 / 30.0))), 1, 3)
 	for i: int in steps:
 		_step(dt / float(steps))
-	var k: float = 1.0 - exp(-delta * 9.0)
-	cam.position = cam.position.lerp(_cam_target(), k)
+	# the camera leads a little toward where the ship aims and travels, eased so it never jumps
+	var lead: Vector2 = (aim_dir * 48.0 if firing else Vector2.ZERO) + pvel * 0.1
+	cam_look = cam_look.lerp(lead, 1.0 - exp(-delta * 3.0))
+	cam.position = cam.position.lerp(_cam_target(), 1.0 - exp(-delta * 10.0))
 	shake = maxf(0.0, shake - delta * 30.0)
 	cam.offset = Vector2(rng.randf_range(-shake, shake), rng.randf_range(-shake, shake)) if shake > 0.1 else Vector2.ZERO
-	view.queue_redraw()
+	view.redraw()
 	hud.queue_redraw()
+	proc_ms = lerpf(proc_ms, float(Time.get_ticks_usec() - t_in) / 1000.0, 0.1)
 
 func _step(dt: float) -> void:
 	time += dt
@@ -725,20 +734,28 @@ func _step_player(dt: float) -> void:
 	want_dash = false
 	touch_dash = false
 
-	var v: Vector2 = mv * move_speed()
 	var dashing: bool = dash_t > 0.0
 	if dashing:
-		v = dash_dir * move_speed() * 3.7
+		pvel = dash_dir * move_speed() * 3.7
 		dash_t -= dt
 		if rng.randf() < 0.7:
 			spark(ppos, Vector2.ZERO, 0.25, 9.0, Color(0.6, 0.95, 1.0, 0.7))
-	pvel = v
+	else:
+		# ease toward the stick: 63% of the way in 40 ms, 95% in 120 ms. Quick, with no jolt on start or stop.
+		pvel = pvel.lerp(mv * move_speed(), 1.0 - exp(-dt * 25.0))
+		if mv == Vector2.ZERO and pvel.length_squared() < 9.0:
+			pvel = Vector2.ZERO
+	var v: Vector2 = pvel
 	var np: Vector2 = ppos + Vector2(v.x * dt, 0.0)
 	if not blocked(np, PR, true, not dashing):
 		ppos = np
+	elif absf(v.x) > 40.0 and absf(v.y) < absf(v.x) * 0.35:
+		ppos.y += _corner_nudge(np, Vector2(0.0, 1.0), absf(v.x) * dt, dashing)
 	np = ppos + Vector2(0.0, v.y * dt)
 	if not blocked(np, PR, true, not dashing):
 		ppos = np
+	elif absf(v.y) > 40.0 and absf(v.x) < absf(v.y) * 0.35:
+		ppos.x += _corner_nudge(np, Vector2(1.0, 0.0), absf(v.y) * dt, dashing)
 	if dashing and dash_t <= 0.0:
 		# a dash that ends over a rift carries a little further. If it still ends over the rift, go back. Nothing is lost.
 		if _over_rift(ppos):
@@ -762,6 +779,15 @@ func _step_player(dt: float) -> void:
 			sfx("shoot", -17.0)
 	if mv.length_squared() > 0.05 and rng.randf() < 0.5:
 		spark(ppos - mv.normalized() * 14.0, -mv * 60.0 + Vector2(rng.randf_range(-20, 20), rng.randf_range(-20, 20)), 0.3, 4.0, Color(1.0, 0.85, 0.45, 0.8))
+
+## When the ship flies straight into the edge of a wall, slide it sideways around the corner instead of stopping dead.
+func _corner_nudge(np: Vector2, side: Vector2, step: float, dashing: bool) -> float:
+	for n: float in [5.0, 10.0, 16.0]:
+		for s: float in [-1.0, 1.0]:
+			var off: Vector2 = side * minf(n, step) * s
+			if not blocked(np + side * n * s, PR, true, not dashing) and not blocked(ppos + off, PR, true, not dashing):
+				return minf(n, step) * s
+	return 0.0
 
 func _over_rift(p: Vector2) -> bool:
 	return tile_at(int(floor(p.x / T)), int(floor(p.y / T))) == TILE_RIFT
@@ -813,6 +839,7 @@ func shoot(kind: int, pos: Vector2, vel: Vector2, life: float, dmg: float, r: fl
 			b_dmg[i] = dmg
 			b_r[i] = r
 			b_next = (i + 1) % MAX_BULLETS
+			b_hi = maxi(b_hi, i + 1)
 			return
 
 func spark(pos: Vector2, vel: Vector2, life: float, size: float, col: Color) -> void:
@@ -840,8 +867,9 @@ func drop(kind: int, pos: Vector2) -> void:
 
 func _step_bullets(dt: float) -> void:
 	var live: int = 0
+	var top: int = 0
 	var hit_r: float = PR * 0.5
-	for i: int in MAX_BULLETS:
+	for i: int in b_hi:
 		var kind: int = b_kind[i]
 		if kind == 0:
 			continue
@@ -855,6 +883,7 @@ func _step_bullets(dt: float) -> void:
 		b_life[i] = life
 		b_pos[i] = pos
 		live += 1
+		top = i + 1
 		if kind == 1:
 			var br: float = b_r[i]
 			for e: Enemy in enemies:
@@ -871,6 +900,7 @@ func _step_bullets(dt: float) -> void:
 				b_kind[i] = 0
 				hurt_player(1)
 	b_live = live
+	b_hi = top
 
 func _step_particles(dt: float) -> void:
 	for i: int in MAX_PARTS:
@@ -1218,7 +1248,7 @@ func _test_state() -> Dictionary:
 		"finds": (save["finds"] as Array).size(), "level": int(save["level"]), "xp": int(save["xp"]), "points": int(save["points"]),
 		"alive": alive, "awake": awake, "shots": b_live, "menu": hud.menu_open, "tab": hud.tab, "touch": touch_visible,
 		"dash": has_dash(), "flags": save["flags"], "cp": str(save["cp"]), "arena": active_arena, "kills": int(save["kills"]),
-		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
+		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
 
 func _test_cmd(cmd: String) -> void:
 	var maps: Dictionary = world["maps"]

@@ -1,9 +1,26 @@
 extends Node2D
-## Draws the world: tiles, things, enemies, shots and the ship. All art is drawn in code. No textures.
-## It only draws what the camera shows.
+## Draws the world. All art is drawn in code. No textures.
+## The map itself (floor, water, rifts and walls) is drawn once per map into chunks of 8 x 8 tiles. Godot keeps those
+## drawings and moves them with the camera, so a frame only redraws the things that move. Off-screen chunks are culled.
+## Layers, back to front: floor chunks (z -3), the under layer (z -2: water shimmer, gates, doors, checkpoints, finds),
+## wall chunks (z -1), then this node (z 0: pickups, enemies, the ship, shots and sparks).
 
 const Enemy := preload("res://scripts/enemy.gd")
 const T := 64.0
+const CH := 8
+
+class Chunk extends Node2D:
+	var v: Node2D
+	var cx: int = 0
+	var cy: int = 0
+	var walls: bool = false
+	func _draw() -> void:
+		v.draw_chunk(self, cx, cy, walls)
+
+class Under extends Node2D:
+	var v: Node2D
+	func _draw() -> void:
+		v.draw_under(self)
 
 var g: Node2D                                   # main.gd, set before it joins the tree
 var floor_a: Color = Color.WHITE
@@ -15,10 +32,24 @@ var water_a: Color = Color.WHITE
 var rift_a: Color = Color.WHITE
 var theme: String = "meadow"
 var font: Font
+var under: Under
+var floor_chunks: Array[Chunk] = []
+var wall_chunks: Array[Chunk] = []
+var water_tiles: Array[Vector2i] = []
+var rift_tiles: Array[Vector2i] = []
+var draw_ms: float = 0.0                        # smoothed time spent in the two per-frame draws, for the test state
 
 func _ready() -> void:
 	font = ThemeDB.fallback_font
+	under = Under.new()
+	under.v = self
+	under.z_index = -2
+	add_child(under)
 	map_changed()
+
+func redraw() -> void:
+	queue_redraw()
+	under.queue_redraw()
 
 func map_changed() -> void:
 	theme = str(g.map.get("theme", "meadow"))
@@ -35,25 +66,66 @@ func map_changed() -> void:
 			floor_a = Color("c2ad90"); floor_b = Color("b8a386")
 			wall_a = Color("3e2f25"); wall_b = Color("6a5240"); wall_c = Color("86694f")
 			water_a = Color("4fb4ea"); rift_a = Color("180e10")
+	RenderingServer.set_default_clear_color(wall_a)
+	if g.mw == 0:
+		return
+	water_tiles.clear()
+	rift_tiles.clear()
+	for ty: int in g.mh:
+		for tx: int in g.mw:
+			var k: int = g.tiles[ty * g.mw + tx]
+			if k == 2:
+				water_tiles.append(Vector2i(tx, ty))
+			elif k == 3:
+				rift_tiles.append(Vector2i(tx, ty))
+	# chunk nodes are made once and reused for every map (E4.5)
+	var cw: int = int(ceil(float(g.mw) / float(CH)))
+	var chh: int = int(ceil(float(g.mh) / float(CH)))
+	var need: int = cw * chh
+	while floor_chunks.size() < need:
+		floor_chunks.append(_make_chunk(false, -3))
+		wall_chunks.append(_make_chunk(true, -1))
+	for i: int in floor_chunks.size():
+		var on: bool = i < need
+		for c: Chunk in [floor_chunks[i], wall_chunks[i]]:
+			c.visible = on
+			if on:
+				c.cx = i % cw
+				c.cy = i / cw
+				c.queue_redraw()
+
+func _make_chunk(walls: bool, z: int) -> Chunk:
+	var c := Chunk.new()
+	c.v = self
+	c.walls = walls
+	c.z_index = z
+	add_child(c)
+	return c
 
 func _hash(x: int, y: int) -> float:
 	var n: int = (x * 374761393 + y * 668265263) & 0x7fffffff
 	n = ((n ^ (n >> 13)) * 1274126177) & 0x7fffffff
 	return float(n % 1000) / 1000.0
 
-func _draw() -> void:
-	if g == null or g.mw == 0:
-		return
+func _view_rect(margin: float) -> Rect2:
 	var vs: Vector2 = get_viewport_rect().size
 	var c: Vector2 = g.cam.get_screen_center_position()
-	var x0: int = maxi(0, int(floor((c.x - vs.x * 0.5) / T)) - 1)
-	var x1: int = mini(g.mw - 1, int(floor((c.x + vs.x * 0.5) / T)) + 1)
-	var y0: int = maxi(0, int(floor((c.y - vs.y * 0.5) / T)) - 1)
-	var y1: int = mini(g.mh - 1, int(floor((c.y + vs.y * 0.5) / T)) + 1)
-	var t: float = g.time
-	draw_rect(Rect2(c - vs, vs * 2.0), wall_a)
-	draw_rect(Rect2(float(x0) * T, float(y0) * T, float(x1 - x0 + 1) * T, float(y1 - y0 + 1) * T), floor_a)
-	# floor pattern, water and rifts
+	return Rect2(c - vs * 0.5 - Vector2(margin, margin), vs + Vector2(margin, margin) * 2.0)
+
+# ------------------------------------------------------------------ the map, drawn once per map
+
+func draw_chunk(ci: CanvasItem, cx: int, cy: int, walls: bool) -> void:
+	var x0: int = cx * CH
+	var y0: int = cy * CH
+	var x1: int = mini(g.mw - 1, x0 + CH - 1)
+	var y1: int = mini(g.mh - 1, y0 + CH - 1)
+	if walls:
+		for ty: int in range(y0, y1 + 1):
+			for tx: int in range(x0, x1 + 1):
+				if g.tiles[ty * g.mw + tx] == 1:
+					_wall(ci, tx, ty)
+		return
+	ci.draw_rect(Rect2(float(x0) * T, float(y0) * T, float(x1 - x0 + 1) * T, float(y1 - y0 + 1) * T), floor_a)
 	for ty: int in range(y0, y1 + 1):
 		for tx: int in range(x0, x1 + 1):
 			var k: int = g.tiles[ty * g.mw + tx]
@@ -61,78 +133,151 @@ func _draw() -> void:
 			var py: float = float(ty) * T
 			if k == 0:
 				if (tx + ty) % 2 == 0:
-					draw_rect(Rect2(px, py, T, T), floor_b)
+					ci.draw_rect(Rect2(px, py, T, T), floor_b)
 				var h: float = _hash(tx, ty)
 				if h < 0.16:
-					_floor_bit(px, py, h)
+					_floor_bit(ci, px, py, h)
+			elif k == 1:
+				ci.draw_rect(Rect2(px, py, T, T), wall_a)
 			elif k == 2:
-				draw_rect(Rect2(px, py, T, T), water_a)
-				var w: float = sin(t * 1.6 + float(tx) * 0.9 + float(ty) * 1.7) * 8.0
-				draw_rect(Rect2(px + 12.0 + w, py + 18.0, 22.0, 3.0), Color(1, 1, 1, 0.35))
-				draw_rect(Rect2(px + 30.0 - w, py + 42.0, 18.0, 3.0), Color(1, 1, 1, 0.25))
+				ci.draw_rect(Rect2(px, py, T, T), water_a)
 				if g.tile_at(tx, ty - 1) != 2:
-					draw_rect(Rect2(px, py, T, 6.0), Color(1, 1, 1, 0.3))
+					ci.draw_rect(Rect2(px, py, T, 6.0), Color(1, 1, 1, 0.3))
 			elif k == 3:
-				draw_rect(Rect2(px, py, T, T), rift_a)
+				ci.draw_rect(Rect2(px, py, T, T), rift_a)
 				if g.tile_at(tx, ty - 1) != 3:
-					draw_rect(Rect2(px, py, T, 16.0), floor_a.darkened(0.45))
-					draw_rect(Rect2(px, py + 16.0, T, 10.0), floor_a.darkened(0.7))
-				var s: float = fmod(t * 0.35 + _hash(tx, ty), 1.0)
-				draw_circle(Vector2(px + 14.0 + _hash(ty, tx) * 36.0, py + T - s * T), 2.5, Color(0.6, 0.85, 1.0, 0.5 * (1.0 - s)))
-	# gates
+					ci.draw_rect(Rect2(px, py, T, 16.0), floor_a.darkened(0.45))
+					ci.draw_rect(Rect2(px, py + 16.0, T, 10.0), floor_a.darkened(0.7))
+
+func _floor_bit(ci: CanvasItem, px: float, py: float, h: float) -> void:
+	var o := Vector2(px + 12.0 + h * 240.0, py + 14.0 + fmod(h * 977.0, 1.0) * 36.0)
+	if theme == "meadow":
+		if h < 0.05:
+			ci.draw_circle(o, 5.0, Color("fff3a0"))
+			ci.draw_circle(o, 2.0, Color("f2913d"))
+		else:
+			ci.draw_rect(Rect2(o.x, o.y, 3.0, 9.0), Color("5fae4a"))
+			ci.draw_rect(Rect2(o.x + 6.0, o.y + 2.0, 3.0, 7.0), Color("5fae4a"))
+	elif theme == "cave":
+		ci.draw_circle(o, 4.0, Color("55527f"))
+		if h < 0.04:
+			ci.draw_circle(o + Vector2(10, 4), 3.0, Color("8ee6ff", 0.6))
+	else:
+		ci.draw_rect(Rect2(o.x, o.y, 14.0, 2.0), Color("a08a70"))
+
+func _wall(ci: CanvasItem, tx: int, ty: int) -> void:
+	var px: float = float(tx) * T
+	var py: float = float(ty) * T
+	var h: float = _hash(tx, ty)
+	var below_open: bool = g.tile_at(tx, ty + 1) != 1
+	if theme == "meadow":
+		var c := Vector2(px + 32.0 + (h - 0.5) * 10.0, py + 30.0 + (fmod(h * 31.0, 1.0) - 0.5) * 10.0)
+		ci.draw_circle(c + Vector2(0, 8), 40.0, wall_a)
+		ci.draw_circle(c, 37.0, wall_b)
+		ci.draw_circle(c + Vector2(-9, -11), 21.0, wall_c)
+		if h > 0.8:
+			ci.draw_circle(c + Vector2(12, 6), 5.0, Color("f06a6a"))
+	elif theme == "cave":
+		ci.draw_rect(Rect2(px, py, T, T), wall_b)
+		ci.draw_rect(Rect2(px + 6.0, py + 5.0, T - 12.0, T - 16.0), wall_c)
+		ci.draw_rect(Rect2(px + 12.0 + h * 20.0, py + 12.0, 14.0, 5.0), wall_c.lightened(0.15))
+		if below_open:
+			ci.draw_rect(Rect2(px, py + T - 12.0, T, 12.0), wall_a)
+	else:
+		ci.draw_rect(Rect2(px, py, T, T), wall_b)
+		ci.draw_rect(Rect2(px + 2.0, py + 2.0, T - 4.0, 27.0), wall_c)
+		var off: float = 0.0 if ty % 2 == 0 else 16.0
+		ci.draw_rect(Rect2(px + 2.0, py + 33.0, 28.0 + off, 27.0), wall_c)
+		ci.draw_rect(Rect2(px + 34.0 + off, py + 33.0, 28.0 - off, 27.0), wall_c)
+		if below_open:
+			ci.draw_rect(Rect2(px, py + T - 10.0, T, 10.0), wall_a)
+
+# ------------------------------------------------------------------ the under layer, every frame
+
+func draw_under(ci: CanvasItem) -> void:
+	if g == null or g.mw == 0:
+		return
+	var t0: int = Time.get_ticks_usec()
+	var vr: Rect2 = _view_rect(T)
+	var t: float = g.time
+	for wt: Vector2i in water_tiles:
+		var px: float = float(wt.x) * T
+		var py: float = float(wt.y) * T
+		if not vr.has_point(Vector2(px, py)):
+			continue
+		var w: float = sin(t * 1.6 + float(wt.x) * 0.9 + float(wt.y) * 1.7) * 8.0
+		ci.draw_rect(Rect2(px + 12.0 + w, py + 18.0, 22.0, 3.0), Color(1, 1, 1, 0.35))
+		ci.draw_rect(Rect2(px + 30.0 - w, py + 42.0, 18.0, 3.0), Color(1, 1, 1, 0.25))
+	for rt: Vector2i in rift_tiles:
+		var rx: float = float(rt.x) * T
+		var ry: float = float(rt.y) * T
+		if not vr.has_point(Vector2(rx, ry)):
+			continue
+		var s: float = fmod(t * 0.35 + _hash(rt.x, rt.y), 1.0)
+		ci.draw_circle(Vector2(rx + 14.0 + _hash(rt.y, rt.x) * 36.0, ry + T - s * T), 2.5, Color(0.6, 0.85, 1.0, 0.5 * (1.0 - s)))
 	for gk: Variant in g.gates.keys():
 		var gt: Vector2i = gk
-		if gt.x < x0 or gt.x > x1 or gt.y < y0 or gt.y > y1:
-			continue
 		var gp := Vector2(float(gt.x) * T, float(gt.y) * T)
+		if not vr.has_point(gp):
+			continue
 		if g.gate_closed(gt.x, gt.y):
-			draw_rect(Rect2(gp, Vector2(T, T)), Color("5b2a4a"))
+			ci.draw_rect(Rect2(gp, Vector2(T, T)), Color("5b2a4a"))
 			for i: int in 3:
-				draw_colored_polygon(PackedVector2Array([gp + Vector2(8.0 + float(i) * 18.0, T - 6.0), gp + Vector2(17.0 + float(i) * 18.0, 8.0), gp + Vector2(26.0 + float(i) * 18.0, T - 6.0)]), Color("d85fa3"))
+				ci.draw_colored_polygon(PackedVector2Array([gp + Vector2(8.0 + float(i) * 18.0, T - 6.0), gp + Vector2(17.0 + float(i) * 18.0, 8.0), gp + Vector2(26.0 + float(i) * 18.0, T - 6.0)]), Color("d85fa3"))
 		else:
-			draw_rect(Rect2(gp + Vector2(0, 0), Vector2(T, 5.0)), Color(0.35, 0.16, 0.3, 0.5))
-			draw_rect(Rect2(gp + Vector2(0, T - 5.0), Vector2(T, 5.0)), Color(0.35, 0.16, 0.3, 0.5))
-	# doors, checkpoints, finds
+			ci.draw_rect(Rect2(gp, Vector2(T, 5.0)), Color(0.35, 0.16, 0.3, 0.5))
+			ci.draw_rect(Rect2(gp + Vector2(0, T - 5.0), Vector2(T, 5.0)), Color(0.35, 0.16, 0.3, 0.5))
 	for d: Dictionary in g.doors:
 		var dp: Vector2 = d["pos"]
-		draw_circle(dp, 30.0, Color(0.05, 0.05, 0.12))
+		if not vr.has_point(dp):
+			continue
+		ci.draw_circle(dp, 30.0, Color(0.05, 0.05, 0.12))
 		for i: int in 3:
 			var a: float = t * 2.0 + float(i) * TAU / 3.0
-			draw_arc(dp, 12.0 + float(i) * 6.0, a, a + 2.2, 10, Color(0.6, 0.8, 1.0, 0.75), 3.0)
+			ci.draw_arc(dp, 12.0 + float(i) * 6.0, a, a + 2.2, 10, Color(0.6, 0.8, 1.0, 0.75), 3.0)
 	for cp: Dictionary in g.checkpoints:
 		var p: Vector2 = cp["pos"]
+		if not vr.has_point(p):
+			continue
 		var on: bool = str(g.save["cp"]) == str(cp["id"])
-		draw_circle(p + Vector2(0, 14), 26.0, Color(0, 0, 0, 0.18))
-		draw_rect(Rect2(p.x - 18.0, p.y + 2.0, 36.0, 16.0), Color("e9e2d0"))
-		draw_rect(Rect2(p.x - 12.0, p.y - 6.0, 24.0, 10.0), Color("cfc6b0"))
+		ci.draw_circle(p + Vector2(0, 14), 26.0, Color(0, 0, 0, 0.18))
+		ci.draw_rect(Rect2(p.x - 18.0, p.y + 2.0, 36.0, 16.0), Color("e9e2d0"))
+		ci.draw_rect(Rect2(p.x - 12.0, p.y - 6.0, 24.0, 10.0), Color("cfc6b0"))
 		var bob: float = sin(t * 3.0) * 4.0
 		var col: Color = Color("ffd84a") if on else Color("9fd8ff")
 		var q: Vector2 = p + Vector2(0, -26.0 + bob)
-		draw_colored_polygon(PackedVector2Array([q + Vector2(0, -14), q + Vector2(11, 0), q + Vector2(0, 14), q + Vector2(-11, 0)]), col)
-		draw_colored_polygon(PackedVector2Array([q + Vector2(0, -8), q + Vector2(5, 0), q + Vector2(0, 4), q + Vector2(-5, 0)]), Color(1, 1, 1, 0.7))
+		ci.draw_colored_polygon(PackedVector2Array([q + Vector2(0, -14), q + Vector2(11, 0), q + Vector2(0, 14), q + Vector2(-11, 0)]), col)
+		ci.draw_colored_polygon(PackedVector2Array([q + Vector2(0, -8), q + Vector2(5, 0), q + Vector2(0, 4), q + Vector2(-5, 0)]), Color(1, 1, 1, 0.7))
 		if on:
-			draw_arc(p + Vector2(0, 10), 30.0 + sin(t * 2.0) * 3.0, 0.0, TAU, 28, Color(1.0, 0.85, 0.3, 0.5), 2.0)
+			ci.draw_arc(p + Vector2(0, 10), 30.0 + sin(t * 2.0) * 3.0, 0.0, TAU, 28, Color(1.0, 0.85, 0.3, 0.5), 2.0)
 	for f: Dictionary in g.open_finds:
 		var fp: Vector2 = f["pos"]
+		if not vr.has_point(fp):
+			continue
 		var fb: float = sin(t * 2.6 + fp.x) * 5.0
 		var kind: String = str(f["kind"])
-		draw_circle(fp + Vector2(0, 18), 14.0, Color(0, 0, 0, 0.18))
+		ci.draw_circle(fp + Vector2(0, 18), 14.0, Color(0, 0, 0, 0.18))
 		var fq: Vector2 = fp + Vector2(0, fb - 4.0)
-		draw_circle(fq, 22.0 + sin(t * 4.0) * 2.0, Color(1, 1, 0.7, 0.22))
+		ci.draw_circle(fq, 22.0 + sin(t * 4.0) * 2.0, Color(1, 1, 0.7, 0.22))
 		if kind == "heart":
-			_heart(fq, 14.0, Color("ff5d7a"))
+			_heart(ci, fq, 14.0, Color("ff5d7a"))
 		elif kind == "ability":
-			draw_circle(fq, 14.0, Color("38d6f0"))
-			draw_circle(fq, 8.0, Color.WHITE)
-			draw_arc(fq, 19.0, t * 3.0, t * 3.0 + 4.0, 16, Color("b8f4ff"), 3.0)
+			ci.draw_circle(fq, 14.0, Color("38d6f0"))
+			ci.draw_circle(fq, 8.0, Color.WHITE)
+			ci.draw_arc(fq, 19.0, t * 3.0, t * 3.0 + 4.0, 16, Color("b8f4ff"), 3.0)
 		else:
-			_star(fq, 15.0, 7.0, t * 0.8, Color("ffe066"))
-			_star(fq, 8.0, 4.0, t * 0.8, Color.WHITE)
-	# walls on top of floor things
-	for ty: int in range(y0, y1 + 1):
-		for tx: int in range(x0, x1 + 1):
-			if g.tiles[ty * g.mw + tx] == 1:
-				_wall(tx, ty)
+			_star(ci, fq, 15.0, 7.0, t * 0.8, Color("ffe066"))
+			_star(ci, fq, 8.0, 4.0, t * 0.8, Color.WHITE)
+	_time(t0)
+
+# ------------------------------------------------------------------ the top layer, every frame
+
+func _draw() -> void:
+	if g == null or g.mw == 0:
+		return
+	var t0: int = Time.get_ticks_usec()
+	var t: float = g.time
+	var vr: Rect2 = _view_rect(80.0)
 	# pickups
 	for i: int in g.MAX_PICKS:
 		var kk: int = g.k_kind[i]
@@ -143,16 +288,16 @@ func _draw() -> void:
 			draw_colored_polygon(PackedVector2Array([kp + Vector2(0, -8), kp + Vector2(6, 0), kp + Vector2(0, 8), kp + Vector2(-6, 0)]), Color("7df0c0"))
 			draw_colored_polygon(PackedVector2Array([kp + Vector2(0, -4), kp + Vector2(3, 0), kp + Vector2(0, 2), kp + Vector2(-3, 0)]), Color.WHITE)
 		else:
-			_heart(kp, 9.0, Color("ff5d7a"))
-	# enemies
+			_heart(self, kp, 9.0, Color("ff5d7a"))
+	# enemies on screen
 	for e: Enemy in g.enemies:
-		if e.alive:
+		if e.alive and vr.has_point(e.pos):
 			_enemy(e, t)
 	# ship
 	if g.phase != g.Phase.DEFEAT:
 		_ship(t)
-	# shots
-	for i: int in g.MAX_BULLETS:
+	# shots, up to the highest slot in use
+	for i: int in g.b_hi:
 		var bk: int = g.b_kind[i]
 		if bk == 0:
 			continue
@@ -173,61 +318,24 @@ func _draw() -> void:
 			var pc: Color = g.p_col[i]
 			pc.a *= a
 			draw_circle(g.p_pos[i], g.p_size[i] * (0.4 + 0.6 * a), pc)
+	_time(t0)
 
-func _floor_bit(px: float, py: float, h: float) -> void:
-	var o := Vector2(px + 12.0 + h * 240.0, py + 14.0 + fmod(h * 977.0, 1.0) * 36.0)
-	if theme == "meadow":
-		if h < 0.05:
-			draw_circle(o, 5.0, Color("fff3a0"))
-			draw_circle(o, 2.0, Color("f2913d"))
-		else:
-			draw_rect(Rect2(o.x, o.y, 3.0, 9.0), Color("5fae4a"))
-			draw_rect(Rect2(o.x + 6.0, o.y + 2.0, 3.0, 7.0), Color("5fae4a"))
-	elif theme == "cave":
-		draw_circle(o, 4.0, Color("55527f"))
-		if h < 0.04:
-			draw_circle(o + Vector2(10, 4), 3.0, Color("8ee6ff", 0.6))
-	else:
-		draw_rect(Rect2(o.x, o.y, 14.0, 2.0), Color("a08a70"))
+func _time(t0: int) -> void:
+	draw_ms = lerpf(draw_ms, float(Time.get_ticks_usec() - t0) / 1000.0, 0.1)
 
-func _wall(tx: int, ty: int) -> void:
-	var px: float = float(tx) * T
-	var py: float = float(ty) * T
-	var h: float = _hash(tx, ty)
-	var below_open: bool = g.tile_at(tx, ty + 1) != 1
-	if theme == "meadow":
-		var c := Vector2(px + 32.0 + (h - 0.5) * 10.0, py + 30.0 + (fmod(h * 31.0, 1.0) - 0.5) * 10.0)
-		draw_circle(c + Vector2(0, 8), 40.0, wall_a)
-		draw_circle(c, 37.0, wall_b)
-		draw_circle(c + Vector2(-9, -11), 21.0, wall_c)
-		if h > 0.8:
-			draw_circle(c + Vector2(12, 6), 5.0, Color("f06a6a"))
-	elif theme == "cave":
-		draw_rect(Rect2(px, py, T, T), wall_b)
-		draw_rect(Rect2(px + 6.0, py + 5.0, T - 12.0, T - 16.0), wall_c)
-		draw_rect(Rect2(px + 12.0 + h * 20.0, py + 12.0, 14.0, 5.0), wall_c.lightened(0.15))
-		if below_open:
-			draw_rect(Rect2(px, py + T - 12.0, T, 12.0), wall_a)
-	else:
-		draw_rect(Rect2(px, py, T, T), wall_b)
-		draw_rect(Rect2(px + 2.0, py + 2.0, T - 4.0, 27.0), wall_c)
-		var off: float = 0.0 if ty % 2 == 0 else 16.0
-		draw_rect(Rect2(px + 2.0, py + 33.0, 28.0 + off, 27.0), wall_c)
-		draw_rect(Rect2(px + 34.0 + off, py + 33.0, 28.0 - off, 27.0), wall_c)
-		if below_open:
-			draw_rect(Rect2(px, py + T - 10.0, T, 10.0), wall_a)
+# ------------------------------------------------------------------ shapes
 
-func _heart(p: Vector2, s: float, col: Color) -> void:
-	draw_circle(p + Vector2(-s * 0.45, -s * 0.25), s * 0.55, col)
-	draw_circle(p + Vector2(s * 0.45, -s * 0.25), s * 0.55, col)
-	draw_colored_polygon(PackedVector2Array([p + Vector2(-s * 0.95, 0), p + Vector2(s * 0.95, 0), p + Vector2(0, s)]), col)
+func _heart(ci: CanvasItem, p: Vector2, s: float, col: Color) -> void:
+	ci.draw_circle(p + Vector2(-s * 0.45, -s * 0.25), s * 0.55, col)
+	ci.draw_circle(p + Vector2(s * 0.45, -s * 0.25), s * 0.55, col)
+	ci.draw_colored_polygon(PackedVector2Array([p + Vector2(-s * 0.95, 0), p + Vector2(s * 0.95, 0), p + Vector2(0, s)]), col)
 
-func _star(p: Vector2, r1: float, r2: float, rot: float, col: Color) -> void:
+func _star(ci: CanvasItem, p: Vector2, r1: float, r2: float, rot: float, col: Color) -> void:
 	var pts := PackedVector2Array()
 	for i: int in 10:
 		var r: float = r1 if i % 2 == 0 else r2
 		pts.append(p + Vector2.from_angle(rot + TAU * float(i) / 10.0 - PI / 2.0) * r)
-	draw_colored_polygon(pts, col)
+	ci.draw_colored_polygon(pts, col)
 
 func _eyes(p: Vector2, look: Vector2, gap: float, size: float) -> void:
 	for sgn: float in [-1.0, 1.0]:

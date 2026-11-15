@@ -224,7 +224,7 @@ func _build_settings(holder: Control) -> void:
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	v.add_child(grid)
-	var ids: Array[String] = ["difficulty", "auto_aim", "speed_idx", "invincible", "music", "sfx", "fullscreen", "erase"]
+	var ids: Array[String] = ["difficulty", "auto_aim", "speed_idx", "invincible", "music", "sfx", "show_fps", "fullscreen", "erase"]
 	for id: String in ids:
 		if id == "fullscreen" and OS.has_feature("mobile"):
 			continue
@@ -416,6 +416,7 @@ func _refresh_settings() -> void:
 	(set_btns["invincible"] as Button).text = "Invincible: %s" % on.call(bool(g.save["invincible"]))
 	(set_btns["music"] as Button).text = "Music: %s" % on.call(bool(g.save["music"]))
 	(set_btns["sfx"] as Button).text = "Sounds: %s" % on.call(bool(g.save["sfx"]))
+	(set_btns["show_fps"] as Button).text = "Frame rate: %s" % on.call(bool(g.save["show_fps"]))
 	if set_btns.has("fullscreen"):
 		(set_btns["fullscreen"] as Button).text = "Full screen: %s" % on.call(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN)
 	(set_btns["erase"] as Button).text = "Press again to erase everything" if erase_armed else "Erase save"
@@ -426,7 +427,7 @@ func _on_setting(id: String) -> void:
 			g.save["difficulty"] = (int(g.save["difficulty"]) + 1) % 3
 		"speed_idx":
 			g.save["speed_idx"] = (int(g.save["speed_idx"]) + 1) % g.SPEEDS.size()
-		"auto_aim", "invincible", "sfx":
+		"auto_aim", "invincible", "sfx", "show_fps":
 			g.save[id] = not bool(g.save[id])
 		"music":
 			g.save["music"] = not bool(g.save["music"])
@@ -607,6 +608,9 @@ func _draw() -> void:
 			draw_rect(Rect2(bx - 3.0, by - 3.0, bw + 6.0, 22.0), Color(0.05, 0.08, 0.16, 0.9))
 			draw_rect(Rect2(bx, by, bw * clampf(g.boss.hp / g.boss.max_hp, 0.0, 1.0), 16.0), Color("d85fa3"))
 		_draw_touch(vs)
+	# frame rate readout, off unless switched on in Settings
+	if bool(g.save["show_fps"]) and not menu_open:
+		_text(Vector2(sm.end.x - 136.0, sm.position.y + 90.0), "%d fps" % int(Engine.get_frames_per_second()), 18, Color("9fe8ff"), HORIZONTAL_ALIGNMENT_RIGHT, 124.0)
 	# messages sit about one third of the way down (G4.3)
 	if not messages.is_empty() and not menu_open:
 		var a: float = clampf(msg_t / 0.3, 0.0, 1.0) * clampf((2.6 - msg_t) / 0.15, 0.0, 1.0)
