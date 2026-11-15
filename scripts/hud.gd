@@ -42,6 +42,12 @@ var mini_dots: MiniDots
 var mini_s: float = 3.0
 var mini_map_id: String = ""
 var mini_seen: int = -1
+var shop_open: bool = false
+var shop_panel: PanelContainer
+var shop_coins: Label
+var shop_info: Label
+var shop_close: Button
+var shop_rows: Dictionary = {}
 var pad_settings: Label
 var messages: Array[String] = []
 var msg_t: float = 0.0
@@ -96,6 +102,7 @@ func _ready() -> void:
 	_build_settings(holder)
 	_build_title()
 	_build_end()
+	_build_shop()
 	get_viewport().size_changed.connect(_layout)
 	Input.joy_connection_changed.connect(_on_pad_changed)
 	_on_pad_changed(0, false)
@@ -176,6 +183,10 @@ func _layout() -> void:
 	panel.size = Vector2(pw, sm.size.y - 100.0)
 	dash_c = Vector2(sm.end.x - 96.0, sm.position.y + sm.size.y * 0.44)
 	_place_mini()
+	if shop_panel != null:
+		var sw: float = minf(860.0, sm.size.x - 40.0)
+		shop_panel.position = Vector2(sm.position.x + (sm.size.x - sw) * 0.5, sm.position.y + 24.0)
+		shop_panel.size = Vector2(sw, sm.size.y - 48.0)
 
 # ------------------------------------------------------------------ pages
 
@@ -369,7 +380,7 @@ func close_end() -> void:
 	g.phase = g.Phase.PLAY
 
 func toggle_menu() -> void:
-	if title.visible or end_card.visible:
+	if title.visible or end_card.visible or shop_open:
 		return
 	if menu_open:
 		_close_menu()
@@ -490,7 +501,7 @@ func _draw_map() -> void:
 	var sz: Vector2 = map_ctl.size
 	var s: float = floorf(minf(sz.x / float(g.mw), (sz.y - 34.0) / float(g.mh)))
 	var o := Vector2((sz.x - s * float(g.mw)) * 0.5, 34.0)
-	map_ctl.draw_string(font, Vector2(0, 24), "%s.  Yellow: checkpoints.  Blue: doors.  White: you." % str(g.map["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("f7f3e6"))
+	map_ctl.draw_string(font, Vector2(0, 24), "%s.  Yellow: checkpoints.  Blue: doors.  Orange: Wren's Wagon.  White: you.%s" % [str(g.map["name"]), "  Map: gold dots are keepsakes, squares are caches." if g.owns("treasure_map") else ""], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("f7f3e6"))
 	map_ctl.draw_rect(Rect2(o, Vector2(s * float(g.mw), s * float(g.mh))), Color(0.03, 0.04, 0.08))
 	var cw: int = int(ceil(float(g.mw) / 4.0))
 	var cols: Array[Color] = [Color("7fbf62"), Color("26402f"), Color("4fb4ea"), Color("101826")]
@@ -507,6 +518,13 @@ func _draw_map() -> void:
 		var dp: Vector2 = d["pos"]
 		if g.seen_now.has((int(dp.y / 64.0) / 4) * cw + int(dp.x / 64.0) / 4):
 			map_ctl.draw_circle(o + dp / 64.0 * s, s * 0.7, Color("6fb8ff"))
+	if g.shop_pos != Vector2.INF:
+		map_ctl.draw_circle(o + g.shop_pos / 64.0 * s, s * 0.7, Color("ff8a5c"))
+	if g.owns("treasure_map"):
+		for f: Dictionary in g.open_finds:
+			map_ctl.draw_circle(o + (f["pos"] as Vector2) / 64.0 * s, s * 0.6, Color("ffe066"))
+		for oc: Dictionary in g.open_caches:
+			map_ctl.draw_rect(Rect2(o + (oc["pos"] as Vector2) / 64.0 * s - Vector2(s, s) * 0.5, Vector2(s, s)), Color("ffb020"))
 	map_ctl.draw_circle(o + g.ppos / 64.0 * s, s * 0.8, Color.WHITE)
 	map_ctl.draw_arc(o + g.ppos / 64.0 * s, s * 1.4, 0.0, TAU, 16, Color.WHITE, 2.0)
 
@@ -542,6 +560,131 @@ func dash_hint() -> String:
 	if g.touch_visible:
 		return "Press the Dash button to dash."
 	return "Dash: Space, right mouse button, or A, RB or RT on an Xbox controller."
+
+# ------------------------------------------------------------------ the shop: Wren's Wagon
+
+func _build_shop() -> void:
+	shop_panel = PanelContainer.new()
+	shop_panel.visible = false
+	add_child(shop_panel)
+	var m := MarginContainer.new()
+	for side: String in ["left", "right", "top", "bottom"]:
+		m.add_theme_constant_override("margin_" + side, 18)
+	shop_panel.add_child(m)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	m.add_child(v)
+	var head := HBoxContainer.new()
+	var t: Label = _label("Wren's Wagon", 30)
+	t.add_theme_color_override("font_color", Color("ffd84a"))
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t.autowrap_mode = TextServer.AUTOWRAP_OFF
+	shop_coins = _label("", 26)
+	shop_coins.autowrap_mode = TextServer.AUTOWRAP_OFF
+	shop_coins.add_theme_color_override("font_color", Color("ffd84a"))
+	head.add_child(t)
+	head.add_child(shop_coins)
+	v.add_child(head)
+	shop_info = _label("", 18)
+	v.add_child(shop_info)
+	var sc := ScrollContainer.new()
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.follow_focus = true
+	v.add_child(sc)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 8)
+	sc.add_child(list)
+	for d: Dictionary in g.shop_defs:
+		var id: String = str(d["id"])
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 14)
+		var name_l: Label = _label("", 20)
+		name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var price_l: Label = _label("", 20)
+		price_l.custom_minimum_size = Vector2(190, 0)
+		price_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		price_l.autowrap_mode = TextServer.AUTOWRAP_OFF
+		var b: Button = _button("Buy", _on_buy.bind(id))
+		b.custom_minimum_size = Vector2(130, 56)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(name_l)
+		row.add_child(price_l)
+		row.add_child(b)
+		list.add_child(row)
+		shop_rows[id] = [name_l, price_l, b]
+	shop_close = _button("Close", close_shop)
+	shop_close.custom_minimum_size = Vector2(240, 56)
+	shop_close.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(shop_close)
+
+func open_shop() -> void:
+	if menu_open:
+		_close_menu()
+	_release_touch()
+	g.set_paused(true)          # after closing the Menu, which un-pauses
+	shop_open = true
+	shop_panel.visible = true
+	menu_btn.visible = false
+	shop_info.text = "Welcome! Coins come from enemies, bushes, pots, crystals, trees and hidden caches. B or Esc closes."
+	_refresh_shop()
+	_focus_shop(0)
+
+func close_shop() -> void:
+	if not shop_open:
+		return
+	shop_open = false
+	shop_panel.visible = false
+	menu_btn.visible = true
+	g.set_paused(false)
+	g.write_save()
+	var f: Control = get_viewport().gui_get_focus_owner()
+	if f != null:
+		f.release_focus()
+
+func _focus_shop(from: int) -> void:
+	var ids: Array = shop_rows.keys()
+	for n: int in ids.size():
+		var b: Button = (shop_rows[ids[(from + n) % ids.size()]] as Array)[2]
+		if not b.disabled:
+			b.grab_focus.call_deferred()
+			return
+	shop_close.grab_focus.call_deferred()
+
+func _refresh_shop() -> void:
+	shop_coins.text = "Coins: %d" % int(g.save["coins"])
+	for d: Dictionary in g.shop_defs:
+		var id: String = str(d["id"])
+		var row: Array = shop_rows[id]
+		var mx: int = int(d.get("max", 1))
+		var have: String = (" (%d of %d)" % [g.bought_count(id), mx]) if mx > 1 else ""
+		(row[0] as Label).text = "%s%s\n    %s" % [str(d["name"]), have, str(d["note"])]
+		var st: String = g.shop_state(id)
+		var price: String = "%d coins" % g.shop_price(id)
+		match st:
+			"sold_out":
+				price = "Sold out" if mx != 1 else "Owned"
+			"need_dash":
+				price = "Needs the dash"
+			"full":
+				price = "Hearts full"
+		(row[1] as Label).text = price
+		(row[1] as Label).modulate = Color(1, 0.55, 0.55) if st == "need_coins" else Color.WHITE
+		var b: Button = row[2]
+		b.disabled = st != "ok"
+		b.focus_mode = Control.FOCUS_ALL if st == "ok" else Control.FOCUS_NONE
+
+func _on_buy(id: String) -> void:
+	var name: String = str((g.shop_by_id[id] as Dictionary)["name"])
+	if g.buy(id):
+		shop_info.text = "Bought: %s. Thank you!" % name
+	else:
+		shop_info.text = "You cannot buy the %s right now." % name
+	_refresh_shop()
+	var b: Button = (shop_rows[id] as Array)[2]
+	if b.disabled:
+		_focus_shop(shop_rows.keys().find(id) + 1)
 
 # ------------------------------------------------------------------ mini map
 
@@ -593,11 +736,18 @@ func draw_mini_dots(ci: Control) -> void:
 	var vs: Vector2 = get_viewport_rect().size
 	var c0: Vector2 = g.cam.get_screen_center_position()
 	ci.draw_rect(Rect2((c0 - vs * 0.5) * k, vs * k), Color(1, 1, 1, 0.35), false, 1.0)
+	if g.shop_pos != Vector2.INF:
+		ci.draw_circle(g.shop_pos * k, 3.5, Color("ff8a5c"))
+	if g.owns("treasure_map"):
+		for f: Dictionary in g.open_finds:
+			ci.draw_circle((f["pos"] as Vector2) * k, 2.5, Color("ffe066"))
+		for oc: Dictionary in g.open_caches:
+			ci.draw_rect(Rect2((oc["pos"] as Vector2) * k - Vector2(2.5, 2.5), Vector2(5, 5)), Color("ffb020"))
 	ci.draw_circle(g.ppos * k, 3.5, Color.WHITE)
 	ci.draw_arc(g.ppos * k, 6.0, 0.0, TAU, 12, Color(1, 1, 1, 0.8), 1.5)
 
 func _process(delta: float) -> void:
-	var show_mini: bool = bool(g.save["minimap"]) and not menu_open and not title.visible and not end_card.visible and g.phase != g.Phase.END and g.mw > 0
+	var show_mini: bool = bool(g.save["minimap"]) and not menu_open and not shop_open and not title.visible and not end_card.visible and g.phase != g.Phase.END and g.mw > 0
 	mini_base.visible = show_mini
 	if show_mini:
 		if g.map_id != mini_map_id or g.seen_now.size() != mini_seen:
@@ -624,7 +774,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var st: InputEventScreenTouch = event
 		if st.pressed:
-			if g.phase != g.Phase.PLAY or g.paused or menu_btn.get_global_rect().has_point(st.position):
+			if g.phase != g.Phase.PLAY or g.paused or shop_open or menu_btn.get_global_rect().has_point(st.position):
 				return
 			if g.has_dash() and st.position.distance_squared_to(dash_c) < 64.0 * 64.0:
 				g.touch_dash = true
@@ -694,7 +844,7 @@ func _draw() -> void:
 		if g.has_dash():
 			_text(Vector2(o.x, y + 18.0), "Dash", 18, Color("9fe8ff"))
 			draw_rect(Rect2(o.x + 62.0, y + 4.0, 144.0, 12.0), Color(0.05, 0.08, 0.16, 0.9))
-			draw_rect(Rect2(o.x + 64.0, y + 6.0, 140.0 * (1.0 - clampf(g.dash_cd / 0.9, 0.0, 1.0)), 8.0), Color("38c6e8"))
+			draw_rect(Rect2(o.x + 64.0, y + 6.0, 140.0 * (1.0 - clampf(g.dash_cd / g.dash_cooldown(), 0.0, 1.0)), 8.0), Color("38c6e8"))
 			y += 24.0
 		# find counter
 		var sp := PackedVector2Array()
@@ -702,6 +852,14 @@ func _draw() -> void:
 			sp.append(Vector2(o.x + 11.0, y + 13.0) + Vector2.from_angle(TAU * float(i) / 10.0 - PI / 2.0) * (11.0 if i % 2 == 0 else 5.0))
 		draw_colored_polygon(sp, Color("ffe066"))
 		_text(Vector2(o.x + 30.0, y + 20.0), "%d / %d" % [(g.save["finds"] as Array).size(), g.find_defs.size()], 20, Color("ffe066"))
+		# coin counter
+		y += 26.0
+		draw_circle(Vector2(o.x + 11.0, y + 13.0), 9.0, Color("b07818"))
+		draw_circle(Vector2(o.x + 11.0, y + 13.0), 7.0, Color("ffc83a"))
+		draw_rect(Rect2(o.x + 9.0, y + 8.0, 4.0, 10.0), Color("fff2b0"))
+		_text(Vector2(o.x + 30.0, y + 20.0), "%d" % int(g.save["coins"]), 20, Color("ffd84a"))
+		if g.owns("shield"):
+			draw_arc(Vector2(o.x + 120.0, y + 13.0), 9.0, 0.0, TAU, 16, Color("9fe8ff") if g.shield_ready else Color(1, 1, 1, 0.25), 3.0)
 		# boss bar
 		if g.boss != null and g.boss.alive and not g.boss.dormant:
 			var bw: float = minf(560.0, vs.x * 0.5)

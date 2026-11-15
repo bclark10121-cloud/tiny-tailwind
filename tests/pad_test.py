@@ -41,6 +41,12 @@ async def main():
                 await r.pad(b, 900, 300); s = await r.state(); r.check(s["dashes"] == n0 + 1, "%s dashes (%d to %d)" % (b, n0, s["dashes"]))
                 await pg.evaluate("() => window.__pad_axes(0, 0)")
             s = await r.state(); r.check(s["rumbles"] >= 3, "the controller is asked to rumble on each dash (%d)" % s["rumbles"])
+            # the shop with only a controller: A buys, B closes
+            await r.cmd("coins_100"); await r.cmd("open_shop"); s = await r.wait_for(lambda s: s["shop"], 10, "shop opens")
+            r.check(s["shop"] and s["focus"] == "Buy", "the shop opens with a Buy button in focus (%s)" % s["focus"]); await r.shot("05b_shop_pad")
+            c0 = s["coins"]; await r.pad("A", 300); s = await r.state(); r.check(s["coins"] < c0, "A buys the focused item (%d to %d)" % (c0, s["coins"]))
+            await r.pad("DOWN", 300); s = await r.state(); r.check(s["focus"] in ("Buy", "Close"), "D-pad moves between shop buttons (%s)" % s["focus"])
+            await r.pad("B", 300); s = await r.wait_for(lambda s: not s["shop"], 10, "shop closes"); r.check(not s["shop"] and not s["paused"], "B closes the shop")
             # back to the title card from the Menu row, then in again
             await r.pad("MENU", 300); await r.wait_for(lambda s: s["menu"], 10, "Menu opens")
             for i in range(5):

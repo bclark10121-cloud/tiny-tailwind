@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.2.1. Brian decides the order.
+Updated 2026-11-15 for v0.3.0. Brian decides the order.
 
 ## Done
 
@@ -18,10 +18,12 @@ Updated 2026-11-15 for v0.2.1. Brian decides the order.
 - v0.1.2 (2026-11-15). Brian found movement very choppy. The map is now drawn once, so the game's own work per frame dropped from about 20 ms to under 2 ms in a slow test browser. The ship eases into moves, slides around wall corners and the camera eases. A Frame rate setting shows the frames a second.
 - v0.2.0 (2026-11-15), the Feel release. Brian found v0.1.2 much smoother and asked for bigger shots, then for best judgment on quality of life. Bigger shots, aim assist levels, a corner mini map, enemy health bars, a low health warning, auto pause, screen shake, rumble and touch stick settings.
 - v0.2.1 (2026-11-15). Brian asked for a different default ship shape and picked the Swallow glider from four options. The ship turns smoothly toward the aim. New app icon.
+- v0.3.0 (2026-11-15), Release 2: coins and the shop. Coins from enemies, trees and breakable bushes, crystals and pots. 10 hidden coin caches. Wren's Wagon with 7 items: Repair kit, Heart seed, Spare part, Coin magnet, Shield charm, Quick dash and Treasure map.
 
 ## Now
 
-- Release 2, coins and the shop (v0.3.0). Brian said to start it after the new ship.
+- Brian plays v0.3.0 and reports how coins and prices feel.
+- Next is Release 3, weapons (v0.4.0), unless Brian picks something else.
 
 ## Asked for by Brian, not built yet
 
@@ -33,9 +35,9 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
 4. 10 boss battles.
 5. New weapon types to find.
 6. New weapon upgrades to find.
-7. A shop with items to buy.
-8. Coins to find around the biomes to buy things.
-9. Shooting trees and enemies makes them drop coins the ship picks up.
+7. A shop with items to buy. Done in v0.3.0.
+8. Coins to find around the biomes to buy things. Done in v0.3.0.
+9. Shooting trees and enemies makes them drop coins the ship picks up. Done in v0.3.0.
 10. New ships.
 11. New ship add-ons.
 12. New paint colors for ships.
@@ -56,7 +58,7 @@ Suggested 2026-11-15. Each has a place in the roadmap. Brian can move or drop an
 22. Three save slots.
 23. Controller rumble and a screen shake setting. Done in v0.2.0.
 24. Aim assist strength setting, between off and full auto aim. Done in v0.2.0.
-25. Scenery that breaks: bushes, pots and crates.
+25. Scenery that breaks: bushes, pots and crates. Done in v0.3.0 (bushes, pots and cave crystals).
 26. Day and night, and weather per biome.
 27. Music per biome and a theme per boss.
 28. A short story intro and friends who talk.
@@ -76,7 +78,7 @@ Order of thought: feel first, then the money loop, then things to collect and we
 | Release | Theme | What is in it | Backlog items |
 |---|---|---|---|
 | 1. v0.2.0, done | Feel | Fixes from Brian's playtest. Tuning of speed, shots and enemies. Better hit and hurt feedback. Aim assist strength, rumble, shake setting, touch settings, corner mini map. Still one biome | 13, 23, 24, 30 |
-| 2. v0.3.0 | Coins and the shop | Coins hidden around the biome. Trees, bushes and enemies drop coins when shot. A shop with items to buy. Scenery that breaks | 7, 8, 9, 25 |
+| 2. v0.3.0, done | Coins and the shop | Coins hidden around the biome. Trees, bushes and enemies drop coins when shot. A shop with items to buy. Scenery that breaks | 7, 8, 9, 25 |
 | 3. v0.4.0 | Weapons | New weapon types to find, such as a spread shot, a piercing shot and a homing shot. Weapon upgrades to find. A charged super shot | 5, 6, 17 |
 | 4. v0.5.0 | Secrets | Hidden rooms and cracked walls. Finds in the first biome rise to 30. Find hints. Enemy journal. Elite enemies | 3, 18, 29, 36, part of 2 |
 | 5. v0.6.0 | The hangar | New ships with their own strengths. Ship add-ons. Paint colors. Three save slots | 10, 11, 12, 22 |
@@ -107,6 +109,7 @@ Counting toward 300 collectibles: 30 per biome across 10 biomes.
 - 2026-11-15: add the game to The Game Shelf with every update, in the same format as the other games.
 - 2026-11-15: the name is Tiny Tailwind.
 - 2026-11-15: bigger shots, and best judgment on quality of life for the next release.
+- 2026-11-15: move to Release 2, coins and the shop, after the new ship.
 - 2026-11-15: a new default ship shape, the Swallow glider, released on its own as v0.2.1, then Release 2.
 - 2026-11-15: backlog items 1 to 12, a list of suggested items and a plan over 10 releases.
 

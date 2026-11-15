@@ -215,6 +215,16 @@ func draw_under(ci: CanvasItem) -> void:
 			continue
 		var s: float = fmod(t * 0.35 + _hash(rt.x, rt.y), 1.0)
 		ci.draw_circle(Vector2(rx + 14.0 + _hash(rt.y, rt.x) * 36.0, ry + T - s * T), 2.5, Color(0.6, 0.85, 1.0, 0.5 * (1.0 - s)))
+	# breakables, the wagon and coin caches
+	for pk: Variant in g.props.keys():
+		var pt: Vector2i = pk
+		var pc: Vector2 = g.tile_center(pt.x, pt.y)
+		if vr.has_point(pc):
+			_prop(ci, pc, g.props[pk], t)
+	for oc: Dictionary in g.open_caches:
+		var op: Vector2 = oc["pos"]
+		if vr.has_point(op):
+			_cache(ci, op, t)
 	for gk: Variant in g.gates.keys():
 		var gt: Vector2i = gk
 		var gp := Vector2(float(gt.x) * T, float(gt.y) * T)
@@ -284,7 +294,16 @@ func _draw() -> void:
 		if kk == 0:
 			continue
 		var kp: Vector2 = g.k_pos[i]
-		if kk == 1:
+		if kk == 3:
+			var bob: float = sin(t * 5.0 + float(i)) * 2.0
+			var w: float = maxf(0.25, absf(cos(t * 4.0 + float(i) * 0.7)))
+			var cpos: Vector2 = kp + Vector2(0, bob)
+			draw_set_transform(cpos, 0.0, Vector2(w, 1.0))
+			draw_circle(Vector2.ZERO, 8.0, Color("b07818"))
+			draw_circle(Vector2.ZERO, 6.2, Color("ffc83a"))
+			draw_rect(Rect2(-1.5, -4.0, 3.0, 8.0), Color("fff2b0"))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		elif kk == 1:
 			draw_colored_polygon(PackedVector2Array([kp + Vector2(0, -8), kp + Vector2(6, 0), kp + Vector2(0, 8), kp + Vector2(-6, 0)]), Color("7df0c0"))
 			draw_colored_polygon(PackedVector2Array([kp + Vector2(0, -4), kp + Vector2(3, 0), kp + Vector2(0, 2), kp + Vector2(-3, 0)]), Color.WHITE)
 		else:
@@ -348,6 +367,66 @@ func _bar(e: Enemy) -> void:
 	var o := Vector2(e.pos.x - w * 0.5, e.pos.y - e.r - 16.0)
 	draw_rect(Rect2(o - Vector2(2, 2), Vector2(w + 4.0, 9.0)), Color(0.05, 0.08, 0.16, 0.85 * a))
 	draw_rect(Rect2(o, Vector2(w * clampf(e.hp / e.max_hp, 0.0, 1.0), 5.0)), Color(1.0, 0.42, 0.42, a))
+
+func _prop(ci: CanvasItem, c: Vector2, pr: Dictionary, t: float) -> void:
+	var kind: String = str(pr["k"])
+	var hurt: float = 0.0 if float(pr["max"]) <= 0.0 else 1.0 - float(pr["hp"]) / float(pr["max"])
+	ci.draw_circle(c + Vector2(0, 14), 22.0, Color(0, 0, 0, 0.16))
+	match kind:
+		"bush":
+			ci.draw_circle(c + Vector2(0, 4), 24.0, Color("3f8a3a"))
+			ci.draw_circle(c, 21.0, Color("7cbf4f").lerp(Color("c8b860"), hurt * 0.6))
+			ci.draw_circle(c + Vector2(-7, -8), 10.0, Color("a3d96b"))
+			for bpos: Vector2 in [Vector2(9, -4), Vector2(-4, 8), Vector2(11, 9)]:
+				ci.draw_circle(c + bpos, 3.5, Color("e2507a"))
+		"crystal":
+			var cols: Array[Color] = [Color("5fd6f0"), Color("a98af0"), Color("8ee6ff")]
+			var shards: Array[Vector2] = [Vector2(-10, 8), Vector2(9, 9), Vector2(0, 2)]
+			var tall: Array[float] = [26.0, 22.0, 34.0]
+			for i: int in 3:
+				var b: Vector2 = c + shards[i]
+				var h: float = tall[i] * (1.0 - hurt * 0.35)
+				ci.draw_colored_polygon(PackedVector2Array([b + Vector2(-7, 0), b + Vector2(0, -h), b + Vector2(7, 0), b + Vector2(0, 6)]), cols[i])
+				ci.draw_line(b + Vector2(0, -h), b + Vector2(0, 4), Color(1, 1, 1, 0.5), 2.0)
+		"pot":
+			ci.draw_circle(c + Vector2(0, 4), 19.0, Color("8a4a2a"))
+			ci.draw_circle(c + Vector2(0, 2), 17.0, Color("c9744a"))
+			ci.draw_rect(Rect2(c.x - 11.0, c.y - 20.0, 22.0, 8.0), Color("8a4a2a"))
+			ci.draw_rect(Rect2(c.x - 9.0, c.y - 18.0, 18.0, 4.0), Color("3a2418"))
+			ci.draw_line(c + Vector2(-14, 4), c + Vector2(14, 4), Color("e8c08a"), 3.0)
+		"stall":
+			# Wren's Wagon: a little cart with a striped awning and Wren the shopkeeper
+			ci.draw_rect(Rect2(c.x - 30.0, c.y - 6.0, 60.0, 30.0), Color("8a5a34"))
+			ci.draw_rect(Rect2(c.x - 30.0, c.y - 6.0, 60.0, 6.0), Color("5e3a20"))
+			ci.draw_circle(c + Vector2(-20, 26), 8.0, Color("3a2418"))
+			ci.draw_circle(c + Vector2(20, 26), 8.0, Color("3a2418"))
+			ci.draw_circle(c + Vector2(-20, 26), 3.0, Color("c9a060"))
+			ci.draw_circle(c + Vector2(20, 26), 3.0, Color("c9a060"))
+			var bob: float = sin(t * 3.0) * 1.5
+			var wren: Vector2 = c + Vector2(0, -14 + bob)
+			ci.draw_circle(wren, 11.0, Color("a8743c"))
+			ci.draw_circle(wren + Vector2(0, 3), 7.0, Color("f0dcb0"))
+			ci.draw_circle(wren + Vector2(-4, -3), 2.2, Color("20202c"))
+			ci.draw_circle(wren + Vector2(4, -3), 2.2, Color("20202c"))
+			ci.draw_colored_polygon(PackedVector2Array([wren + Vector2(-3, 1), wren + Vector2(3, 1), wren + Vector2(0, 6)]), Color("ffb347"))
+			for i: int in 6:
+				var col: Color = Color("e2504c") if i % 2 == 0 else Color("f7f3e6")
+				ci.draw_rect(Rect2(c.x - 34.0 + float(i) * 11.4, c.y - 32.0, 11.4, 12.0), col)
+			ci.draw_rect(Rect2(c.x - 34.0, c.y - 34.0, 68.0, 3.0), Color("5e3a20"))
+			# a coin sign and a mat at the front where the shop opens
+			ci.draw_circle(c + Vector2(26, 4), 7.0, Color("ffc83a"))
+			ci.draw_rect(Rect2(c.x - 22.0, c.y + 40.0, 44.0, 14.0), Color(0.75, 0.35, 0.3, 0.55))
+
+func _cache(ci: CanvasItem, p: Vector2, t: float) -> void:
+	ci.draw_circle(p + Vector2(0, 10), 16.0, Color(0, 0, 0, 0.18))
+	ci.draw_circle(p, 20.0 + sin(t * 4.0) * 2.0, Color(1.0, 0.85, 0.3, 0.2))
+	ci.draw_colored_polygon(PackedVector2Array([p + Vector2(-13, 10), p + Vector2(13, 10), p + Vector2(9, -6), p + Vector2(-9, -6)]), Color("8a5a34"))
+	ci.draw_rect(Rect2(p.x - 6.0, p.y - 11.0, 12.0, 6.0), Color("5e3a20"))
+	for cp: Vector2 in [Vector2(-6, -9), Vector2(5, -10), Vector2(0, -14)]:
+		ci.draw_circle(p + cp, 5.0, Color("b07818"))
+		ci.draw_circle(p + cp, 3.8, Color("ffc83a"))
+	var gl: float = fmod(t * 0.8, 1.0)
+	ci.draw_circle(p + Vector2(8, -16), 2.0 + gl * 2.0, Color(1, 1, 0.9, 1.0 - gl))
 
 func _eyes(p: Vector2, look: Vector2, gap: float, size: float) -> void:
 	for sgn: float in [-1.0, 1.0]:
@@ -460,3 +539,5 @@ func _ship(t: float) -> void:
 	draw_circle(cp - side * 1.5 - fwd * 1.0, 1.6, Color.WHITE)
 	if g.dash_t > 0.0:
 		draw_arc(p, 27.0, 0.0, TAU, 20, Color(0.6, 0.95, 1.0, 0.8), 3.0)
+	elif g.shield_ready and g.owns("shield"):
+		draw_arc(p, 30.0, t * 2.0, t * 2.0 + TAU * 0.8, 24, Color(0.6, 0.92, 1.0, 0.5), 2.0)

@@ -20,7 +20,7 @@ async def main():
             r.check(await r.state() is None, "no test state without the whole-word ?test flag")
             await r.open(base + "index.html?test")
             s = await r.wait_phase([TITLE], 90); await pg.wait_for_timeout(2500); await r.shot("01_title")
-            r.check(s.get("version") == "0.2.1", "title card up, version %s" % s.get("version"))
+            r.check(s.get("version") == "0.3.0", "title card up, version %s" % s.get("version"))
             r.check("none seen yet" in s["pad_line"], "with no controller the title card says so")
             await r.key("Enter"); s = await r.wait_phase([PLAY]); await pg.wait_for_timeout(1200); await r.shot("02_start")
             await r.cmd("low"); await pg.wait_for_timeout(900); s = await r.state(); r.check(s["hp"] == 1 and s["phase"] == PLAY, "one heart left shows the low health warning"); await r.shot("02b_low_health"); await r.cmd("heal")
@@ -48,6 +48,30 @@ async def main():
             await r.cmd("focus_out"); s = await r.wait_for(lambda s: s["menu"], 10, "auto pause opens the Menu"); r.check(s["menu"] and s["paused"], "leaving the game opens the Menu and pauses")
             r.check(not s["mini"], "the mini map hides while the Menu is open")
             await r.key("Escape", 500); s = await r.state(); r.check(not s["menu"], "Esc closes it again")
+            # breakables drop coins: shoot the berry bush two tiles to the right
+            await r.cmd("heal"); await r.cmd("warp_bush"); await r.wait_for(lambda s: s["phase"] == PLAY and abs(s["x"] - 736) < 40, 30, "next to the bush")
+            s = await r.state(); p0, c0 = s["props"], s["coins"]
+            await pg.keyboard.down("ArrowRight"); s = await r.wait_for(lambda s: s["props"] < p0, 15, "the bush breaks"); await pg.keyboard.up("ArrowRight")
+            r.check(s["props"] == p0 - 1, "shooting a bush breaks it (%d to %d props)" % (p0, s["props"]))
+            s = await r.wait_for(lambda s: s["coins"] > c0, 10, "bush coins picked up"); await r.shot("04c_bush_coins")
+            r.check(s["coins"] > c0, "the bush drops coins that fly to the ship (%d to %d)" % (c0, s["coins"]))
+            # a coin cache
+            await r.cmd("warp_cache"); await r.wait_for(lambda s: s["phase"] == PLAY and abs(s["y"] - 1312) < 40, 30, "above the cache")
+            s = await r.state(); c0, k0 = s["coins"], s["caches"]
+            await pg.keyboard.down("s"); s = await r.wait_for(lambda s: s["caches"] > k0, 10, "cache found"); await pg.keyboard.up("s")
+            r.check(s["caches"] == k0 + 1 and s["coins"] >= c0 + 8, "a coin cache adds 8 coins (%d to %d)" % (c0, s["coins"]))
+            await r.shot("04d_cache")
+            # Wren's Wagon: fly into the front of the wagon, buy with the keyboard, close with Esc
+            await r.cmd("coins_100"); await r.cmd("heal"); await r.cmd("warp_shop"); await r.wait_for(lambda s: s["phase"] == PLAY and abs(s["y"] - 1248) < 40, 30, "below the wagon")
+            await pg.keyboard.down("w"); s = await r.wait_for(lambda s: s["shop"], 10, "the shop opens"); await pg.keyboard.up("w")
+            r.check(s["shop"] and s["paused"], "flying into the wagon opens the shop and pauses")
+            await pg.wait_for_timeout(900); await r.shot("04e_shop")
+            s = await r.state(); c0, h0 = s["coins"], s["max_hp"]; r.notes.append("shop focus: %s" % s["focus"])
+            await r.key("Enter", 900); s = await r.state()
+            r.check(s["coins"] < c0 and sum(s["bought"].values()) >= 1, "Enter buys the focused item (%d to %d coins, bought %s)" % (c0, s["coins"], s["bought"]))
+            r.check(s["max_hp"] == h0 + 2, "a Heart seed adds a heart (%d to %d)" % (h0, s["max_hp"]))
+            await r.shot("04f_bought")
+            await r.key("Escape", 700); s = await r.state(); r.check(not s["shop"] and not s["paused"], "Esc closes the shop")
             # menu row and pages
             await r.key("Escape", 700); s = await r.state(); r.check(s["menu"] and s["paused"], "Esc opens the Menu and pauses"); await r.shot("05_menu_ship")
             await r.cmd("xp"); await r.cmd("tab_ship"); await pg.wait_for_timeout(500); await r.shot("06_ship_points")

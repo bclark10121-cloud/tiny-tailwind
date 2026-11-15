@@ -11,7 +11,7 @@ const WorldView := preload("res://scripts/world_view.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VERSION := "0.2.1"
+const VERSION := "0.3.0"
 const T := 64.0
 const PR := 17.0
 const MAX_BULLETS := 700
@@ -27,6 +27,8 @@ const SHAKE_NAMES: Array[String] = ["Off", "Low", "Full"]
 const SHAKE_K: Array[float] = [0.0, 0.4, 1.0]
 const STICK_NAMES: Array[String] = ["Small", "Medium", "Large"]
 const STICK_K: Array[float] = [0.8, 1.0, 1.3]
+const PROP_R := 22.0                 # hit and block size of a bush, pot, crystal or the wagon
+const TREE_COIN := 0.3               # chance a tree drops a coin the first time it is shot on a visit
 const TILE_FLOOR := 0
 const TILE_WALL := 1
 const TILE_WATER := 2
@@ -40,6 +42,10 @@ var enemy_defs: Dictionary = {}
 var find_defs: Array[Dictionary] = []
 var find_by_id: Dictionary = {}
 var arena_ids: Array[String] = []
+var cache_ids: Array[String] = []
+var prop_defs: Dictionary = {}
+var shop_defs: Array[Dictionary] = []
+var shop_by_id: Dictionary = {}
 var cp_pos: Dictionary = {}          # checkpoint id -> [map id, Vector2]
 
 # ---- save ----
@@ -50,6 +56,7 @@ var save: Dictionary = {
 	"defeats": 0, "kills": 0, "play_s": 0.0, "boss_s": 0.0,
 	"difficulty": 1, "auto_aim": false, "speed_idx": 0, "invincible": false, "music": true, "sfx": true, "show_fps": false,
 	"aim_assist": 1, "minimap": true, "shake": 2, "rumble": true, "stick_size": 1,
+	"coins": 0, "bought": {}, "caches": [],
 }
 var store: SaveStore
 var bridge: TestBridge
@@ -68,6 +75,13 @@ var checkpoints: Array[Dictionary] = []
 var doors: Array[Dictionary] = []
 var enemies: Array[Enemy] = []
 var boss: Enemy = null
+var props: Dictionary = {}           # Vector2i tile -> {"k", "hp", "max"} for each bush, pot, crystal or wagon still standing
+var open_caches: Array[Dictionary] = []
+var shop_pos: Vector2 = Vector2.INF  # the front of the wagon, where the shop opens
+var shop_armed: bool = true
+var shaken: Dictionary = {}          # trees already shot on this visit
+var shield_ready: bool = false
+var coins_earned: int = 0
 var seen_now: Dictionary = {}        # chunk index -> true, for the current map
 
 # ---- player ----
@@ -163,7 +177,7 @@ func _ready() -> void:
 	store.limits = {"xp": [0, 100000], "level": [1, 99], "points": [0, 99], "st_damage": [0, STAT_MAX], "st_rate": [0, STAT_MAX],
 		"st_speed": [0, STAT_MAX], "st_range": [0, STAT_MAX], "defeats": [0, 1000000], "kills": [0, 10000000],
 		"play_s": [0.0, 1.0e9], "boss_s": [0.0, 1.0e7], "difficulty": [0, 2], "speed_idx": [0, SPEEDS.size() - 1],
-		"aim_assist": [0, 3], "shake": [0, 2], "stick_size": [0, 2]}
+		"aim_assist": [0, 3], "shake": [0, 2], "stick_size": [0, 2], "coins": [0, 999999]}
 	var args: PackedStringArray = OS.get_cmdline_user_args()
 	bot_mode = args.has("--bot") or args.has("--reach")
 	if bot_mode:
@@ -219,6 +233,14 @@ func _load_data() -> void:
 		for a: Variant in (m["arenas"] as Array):
 			var ad: Dictionary = a
 			arena_ids.append(str(ad["id"]))
+		for cc: Variant in (m.get("caches", []) as Array):
+			cache_ids.append(str((cc as Dictionary)["id"]))
+	prop_defs = _read_json("res://data/props.json")
+	var sl: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/shop.json"))
+	for it: Variant in (sl as Array):
+		var sd: Dictionary = it
+		shop_defs.append(sd)
+		shop_by_id[str(sd["id"])] = sd
 
 func _read_json(path: String) -> Dictionary:
 	var v: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
@@ -241,6 +263,22 @@ func _clean_save() -> void:
 	if bool(save["auto_aim"]):
 		save["auto_aim"] = false          # v0.1 on/off auto aim becomes the Auto fire level. The old key stays (G5.6)
 		save["aim_assist"] = 3
+	# shop purchases and coin caches from a save are checked against the data (E6.7)
+	var bought: Dictionary = {}
+	var src_b: Variant = save["bought"]
+	if src_b is Dictionary:
+		for k: Variant in (src_b as Dictionary).keys():
+			var id: String = str(k)
+			var bv: Variant = (src_b as Dictionary)[k]
+			if shop_by_id.has(id) and (bv is int or bv is float):
+				var mx: int = int((shop_by_id[id] as Dictionary).get("max", 1))
+				bought[id] = clampi(int(bv), 0, mx if mx > 0 else 9999)
+	save["bought"] = bought
+	var caches: Array = []
+	for c: Variant in (save["caches"] as Array):
+		if c is String and cache_ids.has(c) and not caches.has(c):
+			caches.append(c)
+	save["caches"] = caches
 	var seen: Dictionary = {}
 	var maps: Dictionary = world["maps"]
 	for mid: Variant in (save["seen"] as Dictionary).keys():
@@ -311,7 +349,7 @@ func _make_audio() -> void:
 		sfx_players.append(p)
 	if bot_mode:
 		return
-	for n: String in ["shoot", "hit", "pop", "hurt", "crystal", "find", "dash", "checkpoint", "levelup", "gate", "boss", "click", "defeat"]:
+	for n: String in ["shoot", "hit", "pop", "hurt", "crystal", "find", "dash", "checkpoint", "levelup", "gate", "boss", "click", "defeat", "coin", "buy", "break", "leaf"]:
 		sounds[n] = load("res://audio/%s.wav" % n)
 
 func sfx(n: String, vol_db: float = -6.0) -> void:
@@ -364,6 +402,10 @@ func blocked(p: Vector2, r: float, water: bool, rift: bool) -> bool:
 			var k: int = tile_at(tx, ty)
 			var solid: bool = k == TILE_WALL or (water and k == TILE_WATER) or (rift and k == TILE_RIFT) or gate_closed(tx, ty)
 			if not solid:
+				if props.has(Vector2i(tx, ty)):
+					var rr: float = r + PROP_R
+					if p.distance_squared_to(tile_center(tx, ty)) < rr * rr:
+						return true
 				continue
 			var nx: float = clampf(p.x, float(tx) * T, float(tx + 1) * T)
 			var ny: float = clampf(p.y, float(ty) * T, float(ty + 1) * T)
@@ -388,7 +430,7 @@ func has_flag(f: String) -> bool:
 	return (save["flags"] as Array).has(f)
 
 func max_hp() -> int:
-	var hearts: int = 3
+	var hearts: int = 3 + bought_count("heart")
 	for f: Variant in (save["finds"] as Array):
 		var fd: Dictionary = find_by_id[str(f)]
 		if str(fd["kind"]) == "heart":
@@ -409,6 +451,99 @@ func shot_interval() -> float:
 
 func move_speed() -> float:
 	return 300.0 + 20.0 * float(stat("speed"))
+
+# ------------------------------------------------------------------ coins, breakables and the shop
+
+func add_coins(n: int) -> void:
+	save["coins"] = mini(999999, int(save["coins"]) + n)
+	coins_earned += n
+
+func pull_r() -> float:
+	return 320.0 if owns("magnet") else 190.0
+
+func dash_cooldown() -> float:
+	return 0.6 if owns("quick_dash") else 0.9
+
+func hit_prop(tt: Vector2i, dmg: float, at: Vector2) -> void:
+	var pr: Dictionary = props[tt]
+	var kind: String = str(pr["k"])
+	if kind == "stall":
+		spark(at, Vector2.from_angle(rng.randf() * TAU) * 80.0, 0.2, 4.0, Color(1, 1, 0.85))
+		return
+	var col: Color = Color("7cbf4f") if kind == "bush" else (Color("9fe8ff") if kind == "crystal" else Color("c9744a"))
+	pr["hp"] = float(pr["hp"]) - dmg
+	spark(at, Vector2.from_angle(rng.randf() * TAU) * 110.0, 0.3, 5.0, col)
+	if float(pr["hp"]) > 0.0:
+		sfx("leaf" if kind == "bush" else "hit", -12.0)
+		return
+	props.erase(tt)
+	var c: Vector2 = tile_center(tt.x, tt.y)
+	sfx("break", -6.0)
+	for i: int in 14:
+		spark(c, Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(60.0, 220.0), 0.5, 6.0, col.lightened(rng.randf() * 0.3))
+	var d: Dictionary = prop_defs[kind]
+	var cr: Array = d["coins"]
+	for i: int in rng.randi_range(int(cr[0]), int(cr[1])):
+		drop(3, c)
+	if rng.randf() < float(d["heart"]) and hp < max_hp():
+		drop(2, c)
+
+func _tree_hit(tt: Vector2i, at: Vector2) -> void:
+	for i: int in 4:
+		spark(at, Vector2.from_angle(rng.randf() * TAU) * 90.0, 0.4, 4.0, Color("5fae4a"))
+	if shaken.has(tt):
+		return
+	shaken[tt] = true
+	sfx("leaf", -14.0)
+	if rng.randf() < TREE_COIN:
+		drop(3, at)
+
+func bought_count(id: String) -> int:
+	return int((save["bought"] as Dictionary).get(id, 0))
+
+func owns(id: String) -> bool:
+	return bought_count(id) > 0
+
+func shop_price(id: String) -> int:
+	var pr: Array = (shop_by_id[id] as Dictionary)["prices"]
+	return int(pr[mini(bought_count(id), pr.size() - 1)])
+
+## "ok", "sold_out", "need_dash", "full" or "need_coins"
+func shop_state(id: String) -> String:
+	var d: Dictionary = shop_by_id[id]
+	var mx: int = int(d.get("max", 1))
+	if mx > 0 and bought_count(id) >= mx:
+		return "sold_out"
+	if str(d.get("needs", "")) != "" and not has_find(str(d["needs"])):
+		return "need_dash"
+	if id == "repair" and hp >= max_hp():
+		return "full"
+	if int(save["coins"]) < shop_price(id):
+		return "need_coins"
+	return "ok"
+
+func buy(id: String) -> bool:
+	if not shop_by_id.has(id) or shop_state(id) != "ok":
+		return false
+	save["coins"] = int(save["coins"]) - shop_price(id)
+	var b: Dictionary = save["bought"]
+	b[id] = bought_count(id) + 1
+	match id:
+		"repair", "heart":
+			hp = max_hp()
+		"point":
+			save["points"] = int(save["points"]) + 1
+		"shield":
+			shield_ready = true
+	sfx("buy")
+	if not bot_mode:
+		write_save()
+	return true
+
+func open_shop() -> void:
+	paused = true
+	sfx("checkpoint", -10.0)
+	hud.open_shop()
 
 func shot_size() -> float:
 	return 9.0 + float(stat("damage")) * 0.8
@@ -475,6 +610,23 @@ func _load_map(id: String, spawn: Vector2) -> void:
 	for d: Variant in (map["doors"] as Array):
 		var dd: Dictionary = d
 		doors.append({"tx": int(dd["x"]), "ty": int(dd["y"]), "pos": tile_center(int(dd["x"]), int(dd["y"])), "to": str(dd["to"]), "to_pos": tile_center(int(dd["tx"]), int(dd["ty"]))})
+	# breakables come back on every visit. Coin caches are found once
+	props.clear()
+	for pr: Variant in (map.get("props", []) as Array):
+		var pd: Dictionary = pr
+		var hpp: float = float((prop_defs[str(pd["k"])] as Dictionary)["hp"])
+		props[Vector2i(int(pd["x"]), int(pd["y"]))] = {"k": str(pd["k"]), "hp": hpp, "max": hpp}
+	open_caches.clear()
+	for ca: Variant in (map.get("caches", []) as Array):
+		var cd2: Dictionary = ca
+		if not (save["caches"] as Array).has(str(cd2["id"])):
+			open_caches.append({"id": str(cd2["id"]), "pos": tile_center(int(cd2["x"]), int(cd2["y"])), "v": int(cd2["v"])})
+	shop_pos = Vector2.INF
+	if map.has("shop"):
+		var sh: Dictionary = map["shop"]
+		shop_pos = tile_center(int(sh["x"]), int(sh["y"]) + 1)
+	shop_armed = true
+	shaken.clear()
 	enemies.clear()
 	boss = null
 	var i: int = 0
@@ -556,6 +708,7 @@ func start_game() -> void:
 	phase = Phase.PLAY
 	paused = false
 	hp = max_hp()
+	shield_ready = true
 	play_music(music_now)
 	if not bot_mode:
 		write_save()
@@ -577,7 +730,10 @@ func _notification(what: int) -> void:
 	if SaveStore.is_save_moment(what) and store != null and map_id != "" and not bot_mode:
 		write_save()
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST and hud != null:
-		hud.toggle_menu()
+		if hud.shop_open:
+			hud.close_shop()
+		else:
+			hud.toggle_menu()
 	# auto pause: leaving the game opens the Menu, so nothing happens while you are away
 	if (what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED) and hud != null and phase == Phase.PLAY and not paused and not bot_mode:
 		hud.toggle_menu()
@@ -624,9 +780,15 @@ func _input(event: InputEvent) -> void:
 			mouse_active = true
 			touch_visible = false
 	if event.is_action_pressed("menu") and hud != null:
-		hud.toggle_menu()
-	elif event is InputEventJoypadButton and event.is_action_pressed("ui_cancel") and hud != null and hud.menu_open:
-		hud.toggle_menu()               # G5.8: B goes back
+		if hud.shop_open:
+			hud.close_shop()
+		else:
+			hud.toggle_menu()
+	elif event is InputEventJoypadButton and event.is_action_pressed("ui_cancel") and hud != null:
+		if hud.shop_open:
+			hud.close_shop()
+		elif hud.menu_open:
+			hud.toggle_menu()               # G5.8: B goes back
 	if event.is_action_pressed("dash") and phase == Phase.PLAY and not paused:
 		want_dash = true
 
@@ -702,6 +864,7 @@ func _step(dt: float) -> void:
 				var cp: Array = cp_pos[str(save["cp"])]
 				_load_map(str(cp[0]), cp[1])
 				hp = max_hp()
+				shield_ready = true
 				invuln = 1.5
 				phase = Phase.PLAY
 			return
@@ -772,7 +935,7 @@ func _step_player(dt: float) -> void:
 		dash_t = 0.2
 		dash_count += 1
 		dash_extra = 0.0
-		dash_cd = 0.9
+		dash_cd = dash_cooldown()
 		dash_from = ppos
 		sfx("dash", -8.0)
 		rumble(0.25, 0.0, 0.08)
@@ -883,6 +1046,13 @@ func hurt_player(dmg: int) -> void:
 	rumble(0.4, 0.7, 0.2)
 	if bool(save["invincible"]):
 		return
+	if shield_ready and owns("shield"):
+		shield_ready = false
+		say("The shield charm took the hit.")
+		sfx("gate", -6.0)
+		for i: int in 14:
+			spark(ppos + Vector2.from_angle(TAU * float(i) / 14.0) * 28.0, Vector2.from_angle(TAU * float(i) / 14.0) * 90.0, 0.4, 5.0, Color(0.55, 0.92, 1.0))
+		return
 	hp -= dmg * (2 if difficulty() == 2 else 1)
 	for i: int in 10:
 		spark(ppos, Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(80.0, 220.0), 0.45, 5.0, Color(1.0, 0.5, 0.5))
@@ -945,8 +1115,20 @@ func _step_bullets(dt: float) -> void:
 			continue
 		var life: float = b_life[i] - dt
 		var pos: Vector2 = b_pos[i] + b_vel[i] * dt
+		var tt := Vector2i(int(floor(pos.x / T)), int(floor(pos.y / T)))
+		if props.has(tt):
+			var pr2: float = PROP_R + b_r[i]
+			if pos.distance_squared_to(tile_center(tt.x, tt.y)) < pr2 * pr2:
+				b_kind[i] = 0
+				if kind == 1:
+					hit_prop(tt, b_dmg[i], pos)
+				else:
+					spark(pos, -b_vel[i] * 0.1, 0.18, 4.0, Color(1.0, 0.5, 0.8))
+				continue
 		if life <= 0.0 or shot_blocked(pos):
 			b_kind[i] = 0
+			if life > 0.0 and kind == 1 and str(map.get("theme", "")) == "meadow" and tile_at(tt.x, tt.y) == TILE_WALL:
+				_tree_hit(tt, b_pos[i])
 			if life > 0.0:
 				spark(pos, -b_vel[i] * 0.1, 0.18, 4.0, Color(1, 1, 0.8) if kind == 1 else Color(1.0, 0.5, 0.8))
 			continue
@@ -987,7 +1169,8 @@ func _step_pickups(dt: float) -> void:
 		k_age[i] += dt
 		var pos: Vector2 = k_pos[i]
 		var d2: float = pos.distance_squared_to(ppos)
-		if k_age[i] > 0.3 and d2 < 190.0 * 190.0:
+		var pull: float = pull_r()
+		if k_age[i] > 0.3 and d2 < pull * pull:
 			k_vel[i] = (ppos - pos).normalized() * 520.0
 		else:
 			k_vel[i] *= 1.0 - minf(1.0, dt * 4.0)
@@ -998,6 +1181,9 @@ func _step_pickups(dt: float) -> void:
 			k_kind[i] = 0
 			if kind == 1:
 				gain_xp(1)
+			elif kind == 3:
+				add_coins(1)
+				sfx("coin", -16.0)
 			else:
 				hp = mini(max_hp(), hp + 2)
 				sfx("checkpoint", -12.0)
@@ -1044,6 +1230,8 @@ func damage_enemy(e: Enemy, dmg: float, at: Vector2) -> void:
 		spark(e.pos, Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(60.0, 260.0), 0.5, 6.0, e.color.lightened(rng.randf() * 0.4))
 	for i: int in e.xp:
 		drop(1, e.pos)
+	for i: int in rng.randi_range(e.coin_min, e.coin_max):
+		drop(3, e.pos)
 	if rng.randf() < 0.09 and hp < max_hp():
 		drop(2, e.pos)
 	if e == boss:
@@ -1244,6 +1432,27 @@ func _step_triggers(dt: float) -> void:
 		if fp.distance_squared_to(ppos) < 40.0 * 40.0:
 			open_finds.remove_at(i)
 			_collect(str(f["id"]), fp)
+	for i: int in range(open_caches.size() - 1, -1, -1):
+		var oc: Dictionary = open_caches[i]
+		var cpos: Vector2 = oc["pos"]
+		if cpos.distance_squared_to(ppos) < 40.0 * 40.0:
+			open_caches.remove_at(i)
+			(save["caches"] as Array).append(str(oc["id"]))
+			add_coins(int(oc["v"]))
+			say("Coin cache: +%d coins. (%d of %d caches)" % [int(oc["v"]), (save["caches"] as Array).size(), cache_ids.size()])
+			sfx("buy", -4.0)
+			for j: int in 16:
+				spark(cpos, Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(60.0, 200.0), 0.6, 5.0, Color(1.0, 0.85, 0.3))
+			if not bot_mode:
+				write_save()
+	if shop_pos != Vector2.INF:
+		var sd2: float = shop_pos.distance_squared_to(ppos)
+		if shop_armed and sd2 < 56.0 * 56.0:
+			shop_armed = false
+			open_shop()
+			return
+		elif not shop_armed and sd2 > 140.0 * 140.0:
+			shop_armed = true
 	for c: Dictionary in checkpoints:
 		var cp: Vector2 = c["pos"]
 		if cp.distance_squared_to(ppos) < 60.0 * 60.0:
@@ -1252,11 +1461,13 @@ func _step_triggers(dt: float) -> void:
 				say("Checkpoint. Progress saved.")
 				sfx("checkpoint")
 				hp = max_hp()
+				shield_ready = true
 				heal_cd = 3.0
 				if not bot_mode:
 					write_save()
-			elif heal_cd <= 0.0 and hp < max_hp():
+			elif heal_cd <= 0.0 and (hp < max_hp() or (owns("shield") and not shield_ready)):
 				hp = max_hp()
+				shield_ready = true
 				heal_cd = 3.0
 				sfx("checkpoint", -10.0)
 	var tx: int = int(floor(ppos.x / T))
@@ -1321,7 +1532,7 @@ func _test_state() -> Dictionary:
 		"finds": (save["finds"] as Array).size(), "level": int(save["level"]), "xp": int(save["xp"]), "points": int(save["points"]),
 		"alive": alive, "awake": awake, "shots": b_live, "menu": hud.menu_open, "tab": hud.tab, "touch": touch_visible,
 		"dash": has_dash(), "flags": save["flags"], "cp": str(save["cp"]), "arena": active_arena, "kills": int(save["kills"]),
-		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "aim_assist": int(save["aim_assist"]), "mini": hud.mini_shown(), "rumbles": rumble_count, "shot_r": shot_size(), "minimap": bool(save["minimap"]), "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
+		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "coins": int(save["coins"]), "coins_earned": coins_earned, "caches": (save["caches"] as Array).size(), "bought": save["bought"], "shop": hud.shop_open, "props": props.size(), "shield": shield_ready, "open_caches": open_caches.size(), "aim_assist": int(save["aim_assist"]), "mini": hud.mini_shown(), "rumbles": rumble_count, "shot_r": shot_size(), "minimap": bool(save["minimap"]), "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
 
 func _test_cmd(cmd: String) -> void:
 	var maps: Dictionary = world["maps"]
@@ -1367,6 +1578,17 @@ func _test_cmd(cmd: String) -> void:
 			hud.close_end()
 		"low":
 			hp = 1
+		"coins_100":
+			add_coins(100)
+		"warp_shop":
+			go_map("meadow", tile_center(11, 19))
+		"warp_bush":
+			go_map("meadow", tile_center(11, 20))
+		"warp_cache":
+			go_map("meadow", tile_center(4, 20))
+		"open_shop":
+			if phase == Phase.PLAY and not paused:
+				open_shop()
 		"focus_out":
 			_notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 		_:

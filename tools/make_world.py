@@ -4,7 +4,7 @@
 import json
 class Map:
     def __init__(s, name, theme, music, w, h):
-        s.d = {"name": name, "theme": theme, "music": music, "w": w, "h": h, "checkpoints": [], "doors": [], "finds": [], "enemies": [], "arenas": []}
+        s.d = {"name": name, "theme": theme, "music": music, "w": w, "h": h, "checkpoints": [], "doors": [], "finds": [], "enemies": [], "arenas": [], "props": [], "caches": []}
         s.g = [["#"] * w for _ in range(h)]
     def fill(s, x0, y0, x1, y1, c="."):
         for y in range(y0, y1 + 1):
@@ -18,7 +18,22 @@ class Map:
     def arena(s, i, rect, gates):
         for x, y in gates: assert s.g[y][x] == ".", (i, x, y)
         s.d["arenas"].append({"id": i, "rect": rect, "gates": gates})
+    def prop(s, kind, pts):
+        for x, y in pts:
+            assert s.g[y][x] == ".", (kind, x, y); s.d["props"].append({"k": kind, "x": x, "y": y})
+    def cache(s, i, x, y, v):
+        assert s.g[y][x] == ".", (i, x, y); s.d["caches"].append({"id": i, "x": x, "y": y, "v": v})
+    def check(s):
+        # a prop never sits on a find, cache, checkpoint, checkpoint spawn, door or enemy
+        taken = {}
+        for k in ("finds", "caches", "doors"):
+            for o in s.d[k]: taken[(o["x"], o["y"])] = k
+        for o in s.d["checkpoints"]: taken[(o["x"], o["y"])] = "checkpoint"; taken[(o["x"], o["y"] + 1)] = "checkpoint spawn"
+        for o in s.d["enemies"]: taken[(o["x"], o["y"])] = "enemy " + o["k"]
+        for o in s.d["props"]:
+            assert (o["x"], o["y"]) not in taken, ("prop on", taken[(o["x"], o["y"])], o)
     def out(s):
+        s.check()
         for r in (s.g[0], s.g[-1]): assert set(r) == {"#"}
         s.d["rows"] = ["".join(r) for r in s.g]; return s.d
 
@@ -47,6 +62,10 @@ m.en("spitter", [(32, 5), (28, 4), (34, 28), (18, 32), (5, 28), (40, 12), (41, 2
 m.en("charger", [(40, 15), (40, 22), (48, 30), (33, 31)])
 m.en("spinner", [(47, 22), (50, 14)])
 m.en("lobber", [(49, 5), (51, 20)])
+m.prop("stall", [(11, 15)]); m.d["shop"] = {"x": 11, "y": 15}          # Wren's Wagon. Its front is the tile below
+m.prop("bush", [(5, 15), (5, 21), (13, 20), (10, 4), (15, 6), (6, 5), (23, 14), (29, 21), (23, 21), (24, 5), (33, 5), (17, 27), (35, 33),
+                (30, 27), (6, 33), (40, 33), (52, 28), (38, 10), (42, 26), (52, 11), (46, 25), (46, 7)])
+m.cache("mc1", 4, 22, 8); m.cache("mc2", 34, 2, 10); m.cache("mc3", 39, 28, 8); m.cache("mc4", 49, 25, 12); m.cache("mc5", 47, 3, 12)
 
 # ---- Echo Hollow: the cave -----------------------------------------------------------------
 c = Map("Echo Hollow", "cave", "deep", 34, 24)
@@ -64,6 +83,8 @@ c.en("spitter", [(17, 12), (22, 2), (16, 20), (30, 20)])
 c.en("spinner", [(16, 3), (28, 9), (30, 14)])
 c.en("drifter", [(26, 13), (27, 10), (11, 20), (29, 21)])
 c.en("charger", [(31, 21)])
+c.prop("crystal", [(12, 7), (19, 16), (9, 4), (20, 1), (31, 8), (31, 15), (8, 19), (17, 22)])
+c.cache("cc1", 23, 4, 10); c.cache("cc2", 32, 19, 15)
 
 # ---- Thornkeep: the dungeon ----------------------------------------------------------------
 d = Map("Thornkeep", "keep", "deep", 52, 34)
@@ -84,7 +105,10 @@ d.en("spinner", [(31, 29)], "d_a2"); d.en("lobber", [(26, 28), (36, 28)], "d_a2"
 d.arena("d_a2", [25, 27, 37, 31], [[30, 25], [31, 25], [32, 25]])
 d.en("warden", [(45, 17)], "d_boss")
 d.arena("d_boss", [39, 10, 49, 24], [[37, 16], [37, 17], [37, 18]])
+d.prop("pot", [(2, 14), (7, 20), (2, 20), (26, 2), (36, 7), (28, 13), (34, 21)])
+d.cache("dc1", 26, 7, 12); d.cache("dc2", 24, 32, 15); d.cache("dc3", 50, 25, 20)
 
 json.dump({"tile": 64, "start": {"map": "meadow", "x": 7, "y": 19}, "maps": {"meadow": m.out(), "cave": c.out(), "dungeon": d.out()}}, open("data/world.json", "w"), indent=0)
-n = sum(len(x.d["finds"]) for x in (m, c, d)); print("world done: finds", n, "enemies", [len(x.d["enemies"]) for x in (m, c, d)])
+n = sum(len(x.d["finds"]) for x in (m, c, d)); print("world done: finds", n, "enemies", [len(x.d["enemies"]) for x in (m, c, d)],
+    "props", [len(x.d["props"]) for x in (m, c, d)], "caches", sum(len(x.d["caches"]) for x in (m, c, d)), "cache coins", sum(o["v"] for x in (m, c, d) for o in x.d["caches"]))
 for x in (m, c, d): print("\n".join(x.d["rows"])); print()

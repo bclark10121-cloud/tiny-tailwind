@@ -25,6 +25,8 @@ var last_phase: int = -1
 var spend_i: int = 0
 var assist_note: String = ""
 var log_t: int = 0
+var shop_visits: int = 0
+var bought_log: Array[String] = []
 var last_tgt: Enemy = null
 var last_tgt_pos: Vector2 = Vector2.ZERO
 
@@ -41,8 +43,13 @@ func spend_points() -> void:
 
 # ------------------------------------------------------------------ reach report
 
-func _walk(dash_ok: bool) -> Dictionary:
+func _walk(dash_ok: bool, props_block: bool = false) -> Dictionary:
 	var maps: Dictionary = g.world["maps"]
+	var walls: Dictionary = {}
+	if props_block:
+		for mid: Variant in maps.keys():
+			for pr: Variant in ((maps[mid] as Dictionary).get("props", []) as Array):
+				walls["%s:%d,%d" % [str(mid), int((pr as Dictionary)["x"]), int((pr as Dictionary)["y"])]] = true
 	var seen: Dictionary = {}
 	var start: Dictionary = g.world["start"]
 	var queue: Array = [[str(start["map"]), int(start["x"]), int(start["y"])]]
@@ -66,7 +73,7 @@ func _walk(dash_ok: bool) -> Dictionary:
 			var ch: String = (rows[y] as String)[x]
 			if ch == "." or (dash_ok and ch == "^"):
 				var k2: String = "%s:%d,%d" % [str(cur[0]), x, y]
-				if not seen.has(k2):
+				if not seen.has(k2) and not walls.has(k2):
 					seen[k2] = true
 					queue.append([cur[0], x, y])
 	return seen
@@ -105,6 +112,51 @@ func reach_report() -> bool:
 	if not fly.has("dungeon:45,17"):
 		good = false
 		print("REACH FAIL the warden is not reachable")
+	# coin caches, and props never block the only way to anything (they can be shot, but the route must not need it)
+	var pwalk: Dictionary = _walk(true, true)
+	var pfoot: Dictionary = _walk(false, true)
+	var ncache: int = 0
+	var cache_total: int = 0
+	var cache_coins: int = 0
+	for mid: Variant in maps.keys():
+		var m2: Dictionary = maps[mid]
+		for ca: Variant in (m2.get("caches", []) as Array):
+			var cd: Dictionary = ca
+			cache_total += 1
+			cache_coins += int(cd["v"])
+			var ck: String = "%s:%d,%d" % [str(mid), int(cd["x"]), int(cd["y"])]
+			if pwalk.has(ck):
+				ncache += 1
+				print("REACH ok   %-8s coin cache, %2d coins  %s" % [str(cd["id"]), int(cd["v"]), "on foot" if walk.has(ck) else "needs the dash"])
+			else:
+				good = false
+				print("REACH FAIL %-8s coin cache not reachable" % str(cd["id"]))
+		var spots: Array = []
+		for f: Variant in (m2["finds"] as Array):
+			spots.append(["find " + str((f as Dictionary)["id"]), int((f as Dictionary)["x"]), int((f as Dictionary)["y"])])
+		for c: Variant in (m2["checkpoints"] as Array):
+			spots.append(["checkpoint " + str((c as Dictionary)["id"]), int((c as Dictionary)["x"]), int((c as Dictionary)["y"]) + 1])
+		for d: Variant in (m2["doors"] as Array):
+			spots.append(["door", int((d as Dictionary)["x"]), int((d as Dictionary)["y"])])
+		for e: Variant in (m2["enemies"] as Array):
+			if str((e as Dictionary)["k"]) == "warden":
+				spots.append(["the warden", int((e as Dictionary)["x"]), int((e as Dictionary)["y"])])
+		for sp: Array in spots:
+			var sk: String = "%s:%d,%d" % [str(mid), int(sp[1]), int(sp[2])]
+			if fly.has(sk) and not pwalk.has(sk):
+				good = false
+				print("REACH FAIL a breakable blocks the only way to %s on %s" % [str(sp[0]), str(mid)])
+	var shop_ok: bool = false
+	var mm: Dictionary = maps["meadow"]
+	if mm.has("shop"):
+		var shd: Dictionary = mm["shop"]
+		shop_ok = pfoot.has("meadow:%d,%d" % [int(shd["x"]), int(shd["y"]) + 1])
+	if not shop_ok:
+		good = false
+		print("REACH FAIL Wren's Wagon is not reachable on foot from the start")
+	if cache_total != g.cache_ids.size():
+		good = false
+	print("REACH caches %d/%d (%d coins). Breakables block nothing. Shop on foot: %s" % [ncache, cache_total, cache_coins, shop_ok])
 	if total != g.find_defs.size():
 		good = false
 		print("REACH FAIL %d finds placed, %d defined" % [total, g.find_defs.size()])
@@ -130,7 +182,7 @@ func _costs(from: Vector2i) -> Dictionary:
 		for o: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 			var nx: Vector2i = cur + o
 			var k: int = g.tile_at(nx.x, nx.y)
-			if k == 1 or k == 2 or (k == 3 and not dash_ok) or g.gate_closed(nx.x, nx.y):
+			if k == 1 or k == 2 or (k == 3 and not dash_ok) or g.gate_closed(nx.x, nx.y) or g.props.has(nx):
 				continue
 			var nc: int = cc + (60 if k == 3 else 1)
 			if not cost.has(nx) or nc < int(cost[nx]):
@@ -153,6 +205,18 @@ func _plan() -> void:
 			bc = int(cost[t])
 			best = t
 			goal_name = "find " + str(f["id"])
+	for oc: Dictionary in g.open_caches:
+		var t3: Vector2i = _tile(oc["pos"])
+		if cost.has(t3) and int(cost[t3]) < bc:
+			bc = int(cost[t3])
+			best = t3
+			goal_name = "cache " + str(oc["id"])
+	if g.shop_pos != Vector2.INF and g.shop_armed and shop_visits < 2 and int(g.save["coins"]) >= 80:
+		var t4: Vector2i = _tile(g.shop_pos)
+		if cost.has(t4):
+			bc = -1
+			best = t4
+			goal_name = "Wren's Wagon"
 	for c: Dictionary in g.checkpoints:
 		if touched.has(str(c["id"])):
 			continue
@@ -194,10 +258,13 @@ func _map_done(mid: String) -> bool:
 	for f: Variant in (m["finds"] as Array):
 		if not g.has_find(str((f as Dictionary)["id"])):
 			return false
+	for ca: Variant in (m.get("caches", []) as Array):
+		if not (g.save["caches"] as Array).has(str((ca as Dictionary)["id"])):
+			return false
 	return true
 
 func _all_done() -> bool:
-	return g.has_flag("d_boss") and (g.save["finds"] as Array).size() == g.find_defs.size()
+	return g.has_flag("d_boss") and (g.save["finds"] as Array).size() == g.find_defs.size() and (g.save["caches"] as Array).size() == g.cache_ids.size() and shop_visits >= 1
 
 func think() -> void:
 	move = Vector2.ZERO
@@ -219,6 +286,15 @@ func think() -> void:
 	if ph == g.Phase.END:
 		seen_end = true
 		g.hud.close_end()
+		return
+	if g.hud.shop_open:
+		shop_visits += 1
+		for id: String in ["heart", "shield", "magnet", "quick_dash", "point", "treasure_map"]:
+			while g.buy(id):
+				bought_log.append(id)
+		print("BOT shop visit %d: bought %s, %d coins left" % [shop_visits, str(bought_log), int(g.save["coins"])])
+		g.hud.close_shop()
+		path.clear()
 		return
 	if ph != g.Phase.PLAY:
 		return
@@ -322,5 +398,5 @@ func _finish(good: bool, why: String) -> void:
 	finished = true
 	ok = good and _all_done()
 	var n: int = (g.save["finds"] as Array).size()
-	print("BOT %s: warden calmed %s, finds %d/%d, level %d, defeats %d, %d s of play.%s %s" % ["done" if ok else "FAIL", g.has_flag("d_boss"), n, g.find_defs.size(),
-		int(g.save["level"]), int(g.save["defeats"]), ticks / 60, assist_note, why])
+	print("BOT %s: warden calmed %s, finds %d/%d, caches %d/%d, coins earned %d, shop visits %d, bought %s, level %d, defeats %d, %d s of play.%s %s" % ["done" if ok else "FAIL", g.has_flag("d_boss"), n, g.find_defs.size(),
+		(g.save["caches"] as Array).size(), g.cache_ids.size(), g.coins_earned, shop_visits, str(bought_log), int(g.save["level"]), int(g.save["defeats"]), ticks / 60, assist_note, why])

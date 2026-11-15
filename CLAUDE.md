@@ -28,12 +28,13 @@ This game has combat, enemies and bosses. Override rows 1 and 2 in `STANDARDS_OV
 ## Rules
 
 - The world is a tile grid, 64 px a tile. `tools/make_world.py` writes `data/world.json`. Tiles: `#` wall, `.` floor, `~` water, `^` rift. Only a dash crosses a rift.
-- Enemies live in `data/enemies.json` and finds in `data/finds.json`. New enemies, finds and rooms need no new code (G4.9).
+- Enemies live in `data/enemies.json`, finds in `data/finds.json`, breakables in `data/props.json` and shop items in `data/shop.json`. Coin caches, breakables and Wren's Wagon are placed in `tools/make_world.py`. New enemies, finds, rooms, caches and shop items need no new code (G4.9).
 - Movement, shots and hits are plain maths in `scripts/main.gd`. No physics bodies (override 6).
 - Shots, sparks and pickups live in pools made once. Never create or free nodes during play (E4.5).
 - All art is drawn in code in `scripts/world_view.gd` and `scripts/hud.gd`. No textures. Use only letters, digits and plain punctuation in on-screen text: the built-in font has no star or box symbols.
 - Save file is `user://tiny_tailwind.json`, format `v: 1`, written with `addons/bc_common/save_store.gd`. Only add fields, each with a safe default. Find ids, checkpoint ids and arena ids from a save are checked against the data files (E6.7).
-- Never rename a find id, a checkpoint id or an arena id.
+- Never rename a find id, a checkpoint id, an arena id, a coin cache id or a shop item id. Shop purchases and caches from a save are checked against the data (E6.7).
+- Breakables are solid and can be shot. They must never block the only way to anything: `--reach` checks it.
 - Short sounds come from `tools/make_sfx.py` (mono 22.05 kHz `.wav`). Music comes from the Patch.gg library (G8.1). Every outside asset goes in `CREDITS.md`.
 - Xbox button names everywhere a player reads them: A, B, RB, RT, View, Menu, D-pad. Never Back or Start (G5.8). `InputSetup.add_controller_ui()` runs at startup.
 - No personal names on the game page, the card or public repo files beyond the first name (G1.11).
@@ -43,8 +44,8 @@ This game has combat, enemies and bosses. Override rows 1 and 2 in `STANDARDS_OV
 - `bash tools/common/sync_common.sh --check .` must print `COMMON check ok` (G10.3).
 - `bash tools/common/check_secrets.sh` must print `SECRETS check ok` (G1.9).
 - `godot --headless --path . -s res://tests/common/save_store_check.gd` must print `SAVESTORE check ok` (E6.7).
-- `godot --headless --path . -- --reach` must print `REACH ok 20/20` (G7.2). It also proves the Dash Core is reachable on foot and the keep is gated by the dash.
-- `godot --headless --path . -- --bot` must print `BOT done` (override 5). The bot plays the whole route on Relaxed. Add `--normal` for Normal.
+- `godot --headless --path . -- --reach` must print `REACH ok 20/20` and `REACH caches 10/10` (G7.2). It also proves the Dash Core is reachable on foot, the keep is gated by the dash, breakables block nothing and the shop is reachable on foot.
+- `godot --headless --path . -- --bot` must print `BOT done` (override 5). The bot plays the whole route on Relaxed, collects every cache and buys at the shop. Add `--normal` for Normal.
 - `python3 tests/web_test.py <web folder> <shots folder>` must print `errors []`. View the screenshots (G7.3).
 - `python3 tests/pad_test.py <web folder> <shots folder>` must print `errors []`. It plays from the title card through every Menu page and the end card with only the kit's pretend Xbox controller (G5.8).
 - Test hooks run only with the whole-word `?test` flag and never in the APK (G7.8). `?notch` adds a pretend notch, only together with `?test`.
