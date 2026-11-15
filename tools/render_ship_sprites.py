@@ -1,15 +1,18 @@
-"""Render the ship sprites in art/ship/ from the Meshy model (v0.3.1).
+"""Render the five ship sprites in art/ship/ from a Meshy model.
 
 Usage, from the repo root:
   pip install trimesh moderngl pillow numpy scipy
-  python3 -I tools/render_ship_sprites.py art_source/swallow_glider.glb <out_dir> [size] [--flip]
+  python3 -I tools/render_ship_sprites.py <model.glb> <out_dir> [--size 192] [--nose +y] [--up +z]
 Then copy the five ship_bank_*.png files into art/ship/. Not part of the game build or the test gate.
 
-Draws the model straight down (orthographic), nose pointing right (Godot's
-angle 0), with a transparent background, soft toy lighting and a dark outline.
-Writes one sprite per bank angle plus a contact sheet for review.
+--nose and --up name the model axes that point to the ship's nose and to its top (+x, -x, +y, -y, +z or -z).
+The Manta (v0.3.2) came from one top-down image, so its nose is +y and its top is +z.
+Each sprite looks straight down on the ship with the nose pointing right (Godot angle 0), a transparent
+background, soft toy lighting and a navy outline. The ship's widest side fills 60/66 of the square, so a
+66 px draw shows it 60 px across. Bank frames roll the ship 15 and 30 degrees each way. A positive bank
+dips the ship's right wing.
 """
-import sys, os, math
+import sys, os, math, argparse
 import numpy as np
 import trimesh
 import moderngl
@@ -36,30 +39,22 @@ out vec4 f_color;
 void main() {
     vec3 base = texture(tex, v_uv).rgb;
     float d = max(dot(normalize(v_nrm), normalize(light_dir)), 0.0);
-    float shade = 0.62 + 0.45 * d;
+    float shade = 0.66 + 0.40 * d;
     f_color = vec4(min(base * shade, vec3(1.0)), 1.0);
 }
 """
 
-def rot_x(a):
-    c, s = math.cos(a), math.sin(a)
-    return np.array([[1, 0, 0], [0, c, -s], [0, s, c]], dtype="f4")
-
-def rot_y(a):
-    c, s = math.cos(a), math.sin(a)
-    return np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype="f4")
-
-def rot_z(a):
-    c, s = math.cos(a), math.sin(a)
-    return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]], dtype="f4")
+AXES = {"+x": (1, 0, 0), "-x": (-1, 0, 0), "+y": (0, 1, 0), "-y": (0, -1, 0), "+z": (0, 0, 1), "-z": (0, 0, -1)}
 
 def main():
-    src, out_dir = sys.argv[1], sys.argv[2]
-    size = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 192
-    flip = "--flip" in sys.argv
-    os.makedirs(out_dir, exist_ok=True)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("model"); ap.add_argument("out")
+    ap.add_argument("--size", type=int, default=192)
+    ap.add_argument("--nose", default="+y"); ap.add_argument("--up", default="+z")
+    a = ap.parse_args()
+    os.makedirs(a.out, exist_ok=True)
 
-    scene = trimesh.load(src)
+    scene = trimesh.load(a.model)
     geom = list(scene.geometry.values())[0]
     v = np.asarray(geom.vertices, dtype="f4")
     v -= (v.max(0) + v.min(0)) / 2.0
@@ -68,66 +63,62 @@ def main():
     f = np.asarray(geom.faces, dtype="i4")
     img = geom.visual.material.baseColorTexture.convert("RGB")
 
-    # Meshy model: Y up, nose along -X (canopy sits at -X, wings sweep toward +X).
-    # Turn it so the nose points along +X (Godot angle 0).
-    yaw = rot_y(math.pi if not flip else 0.0)
-    v = v @ yaw.T
-    n = n @ yaw.T
-    radius = float(np.linalg.norm(v[:, [0, 2]], axis=1).max())
+    # Turn the model into ship space: nose +X, top +Y, right wing +Z.
+    nose = np.array(AXES[a.nose], dtype="f4"); up = np.array(AXES[a.up], dtype="f4")
+    right = np.cross(nose, up)
+    to_ship = np.stack([nose, up, right])          # rows: new X, Y, Z in model coordinates
+    v = v @ to_ship.T
+    n = n @ to_ship.T
 
     ctx = moderngl.create_context(standalone=True, backend="egl")
     prog = ctx.program(vertex_shader=VERT, fragment_shader=FRAG)
-    data = np.hstack([v, n, uv]).astype("f4")
-    vbo = ctx.buffer(data.tobytes())
+    vbo = ctx.buffer(np.hstack([v, n, uv]).astype("f4").tobytes())
     ibo = ctx.buffer(f.tobytes())
     vao = ctx.vertex_array(prog, [(vbo, "3f 3f 2f", "in_pos", "in_nrm", "in_uv")], ibo)
     tex = ctx.texture(img.size, 3, img.transpose(Image.FLIP_TOP_BOTTOM).tobytes())
-    tex.build_mipmaps()
-    tex.use(0)
+    tex.build_mipmaps(); tex.use(0)
     prog["tex"].value = 0
-    prog["light_dir"].value = (-0.35, 1.0, 0.45)
+    prog["light_dir"].value = (-0.35, 1.0, -0.45)   # from above, a little from the tail and the left wing
 
     ss = 4
-    big = size * ss
+    big = a.size * ss
     fbo = ctx.simple_framebuffer((big, big), components=4)
     fbo.use()
     ctx.enable(moderngl.DEPTH_TEST)
 
-    # Top-down: look down -Y. Screen x = world X, screen up = world -Z (so +X nose points right).
-    view = np.array([[1, 0, 0], [0, 0, -1], [0, -1, 0]], dtype="f4")
-    margin = 1.12
-    scale = 1.0 / (radius * margin)
+    # Look straight down -Y. Screen right = +X (nose), screen up = -Z (left wing), nearer = higher Y.
+    view = np.array([[1, 0, 0], [0, 0, -1], [0, -0.5, 0]], dtype="f4")
+    half = float(max(np.abs(v[:, 0]).max(), np.abs(v[:, 2]).max()))
+    scale = (60.0 / 66.0) / half
+
+    def roll(deg):
+        c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+        return np.array([[1, 0, 0], [0, c, -s], [0, s, c]], dtype="f4")   # +deg lifts the left wing (-Z)
 
     frames = {}
     for deg in (0, 15, 30, -15, -30):
-        roll = rot_x(math.radians(deg))
-        r3 = view @ roll
+        r = roll(deg)
         m = np.eye(4, dtype="f4")
-        m[:3, :3] = r3 * scale
-        m[2, :3] *= 0.5  # depth: higher Y is nearer the camera
+        m[:3, :3] = (view @ r) * scale
         prog["mvp"].write(m.T.copy().tobytes())
-        prog["rot"].write(roll.T.copy().tobytes())
+        prog["rot"].write(r.T.copy().tobytes())
         fbo.clear(0, 0, 0, 0, depth=1.0)
         vao.render()
         raw = Image.frombytes("RGBA", (big, big), fbo.read(components=4)).transpose(Image.FLIP_TOP_BOTTOM)
-        # Outline: grow the alpha and paint it dark navy behind the ship.
-        a = raw.getchannel("A")
-        grown = a.filter(ImageFilter.MaxFilter(2 * ss + 1))
+        grown = raw.getchannel("A").filter(ImageFilter.MaxFilter(2 * ss + 1))
         outline = Image.new("RGBA", raw.size, (31, 59, 99, 255))
         outline.putalpha(grown)
-        comp = Image.alpha_composite(outline, raw)
-        sprite = comp.resize((size, size), Image.LANCZOS)
+        sprite = Image.alpha_composite(outline, raw).resize((a.size, a.size), Image.LANCZOS)
         name = "ship_bank_%s%02d.png" % ("p" if deg >= 0 else "m", abs(deg))
-        sprite.save(os.path.join(out_dir, name))
+        sprite.save(os.path.join(a.out, name))
         frames[deg] = sprite
 
-    # Contact sheet on grass green for review.
     order = (-30, -15, 0, 15, 30)
-    sheet = Image.new("RGBA", (size * len(order) + 10 * (len(order) + 1), size + 20), (86, 156, 74, 255))
+    sheet = Image.new("RGBA", (a.size * 5 + 60, a.size + 20), (86, 156, 74, 255))
     for i, deg in enumerate(order):
-        sheet.alpha_composite(frames[deg], (10 + i * (size + 10), 10))
-    sheet.save(os.path.join(out_dir, "contact_sheet.png"))
-    print("radius", radius, "frames", sorted(frames))
+        sheet.alpha_composite(frames[deg], (10 + i * (a.size + 10), 10))
+    sheet.save(os.path.join(a.out, "contact_sheet.png"))
+    print("rendered", sorted(frames), "half extent", round(half, 3))
 
 if __name__ == "__main__":
     main()

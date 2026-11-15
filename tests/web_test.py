@@ -20,7 +20,7 @@ async def main():
             r.check(await r.state() is None, "no test state without the whole-word ?test flag")
             await r.open(base + "index.html?test")
             s = await r.wait_phase([TITLE], 90); await pg.wait_for_timeout(2500); await r.shot("01_title")
-            r.check(s.get("version") == "0.3.1", "title card up, version %s" % s.get("version"))
+            r.check(s.get("version") == "0.3.2", "title card up, version %s" % s.get("version"))
             r.check("none seen yet" in s["pad_line"], "with no controller the title card says so")
             await r.key("Enter"); s = await r.wait_phase([PLAY]); await pg.wait_for_timeout(1200); await r.shot("02_start")
             await r.cmd("low"); await pg.wait_for_timeout(900); s = await r.state(); r.check(s["hp"] == 1 and s["phase"] == PLAY, "one heart left shows the low health warning"); await r.shot("02b_low_health"); await r.cmd("heal")
