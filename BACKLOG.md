@@ -41,6 +41,7 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
 10. New ships.
 11. New ship add-ons.
 12. New paint colors for ships.
+37. Spec sheets for more art, like the Swallow glider ship spec: one for each enemy, boss, new ship and ship add-on. Each holds reference views, colors, size, markers and a hitbox. Asked 2026-11-15. Each sheet lands in the release that adds that art.
 
 ## Ideas to choose from (Brian picks by number)
 
@@ -90,6 +91,8 @@ Order of thought: feel first, then the money loop, then things to collect and we
 
 Counting toward 300 collectibles: 30 per biome across 10 biomes.
 
+Item 37 rides along with the art it covers: ship and add-on sheets in Release 5, enemy and boss sheets in each release that adds them (Releases 4 and 6 to 9).
+
 ## Later
 
 - Google Play listing, after v1.0.0 and only when Brian says so.
@@ -112,6 +115,7 @@ Counting toward 300 collectibles: 30 per biome across 10 biomes.
 - 2026-11-15: move to Release 2, coins and the shop, after the new ship.
 - 2026-11-15: a new default ship shape, the Swallow glider, released on its own as v0.2.1, then Release 2.
 - 2026-11-15: backlog items 1 to 12, a list of suggested items and a plan over 10 releases.
+- 2026-11-15: a reference spec sheet for the Swallow glider (Gemini views, then a Meshy 3D model), and spec sheets for enemies, new ships and more added as item 37.
 
 ## Judgment calls made for v0.1.0 (Brian can change any)
 
