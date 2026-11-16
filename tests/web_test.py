@@ -73,7 +73,7 @@ async def main():
             await r.shot("04d_cache")
             # v0.3.4: a keepsake nearby gives a find hint
             s = await r.state(); h0 = s["hint_pings"]
-            await r.cmd("heal"); await r.cmd("warp_find"); s = await r.wait_for(lambda s: s["hint_pings"] > h0, 15, "a find hint"); await pg.wait_for_timeout(200); await r.shot("04g_find_hint")
+            await r.cmd("heal"); await r.cmd("warp_find"); s = await r.wait_for(lambda s: s["hint_pings"] > h0, 60, "a find hint")  # the 7 s cooldown runs in game time, which crawls in software drawing; await pg.wait_for_timeout(200); await r.shot("04g_find_hint")
             r.check(s["hint_pings"] > h0, "a keepsake nearby gives a find hint (%d to %d)" % (h0, s["hint_pings"]))
             # Wren's Wagon: fly into the front of the wagon, buy with the keyboard, close with Esc
             await r.cmd("coins_100"); await r.cmd("heal"); await r.cmd("warp_shop"); await r.wait_for(lambda s: s["phase"] == PLAY and abs(s["y"] - 1248) < 40, 30, "below the wagon")

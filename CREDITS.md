@@ -29,3 +29,8 @@ Tiny Tailwind is an original game. The world, the enemies, the boss and every ot
 ## Tools
 
 - Godot Engine 4.6. https://godotengine.org (MIT licence)
+
+## Fonts (v0.4 graphics, staged)
+
+- Nunito Bold for menus and text. Copyright 2014 The Nunito Project Authors. SIL Open Font License 1.1 (`fonts/OFL-Nunito.txt`). From the Fontsource package `@fontsource/nunito` 5.3.0, Latin subset.
+- Fredoka SemiBold for the title and world labels. Copyright 2016 The Fredoka Project Authors. SIL Open Font License 1.1 (`fonts/OFL-Fredoka.txt`). From the Fontsource package `@fontsource/fredoka` 5.3.0, Latin subset.

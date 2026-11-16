@@ -61,7 +61,7 @@ var save: Dictionary = {
 	"difficulty": 1, "auto_aim": false, "speed_idx": 0, "invincible": false, "music": true, "sfx": true, "show_fps": false,
 	"aim_assist": 1, "minimap": true, "shake": 2, "rumble": true, "stick_size": 1,
 	"coins": 0, "bought": {}, "caches": [],
-	"zoom": 0, "markers": true, "hints": true, "cps": [], "touch_left": false, "touch_fixed": false, "safe_colors": false,
+	"zoom": 0, "markers": true, "hints": true, "glow": true, "cps": [], "touch_left": false, "touch_fixed": false, "safe_colors": false,
 }
 var store: SaveStore
 var bridge: TestBridge
@@ -204,6 +204,7 @@ func _ready() -> void:
 	view = WorldView.new()
 	view.g = self
 	add_child(view)
+	_setup_look()
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	hud = Hud.new()
@@ -693,6 +694,7 @@ func _load_map(id: String, spawn: Vector2) -> void:
 	play_music(str(map["music"]))
 	if view != null:
 		view.map_changed()
+	_apply_look()
 
 func go_map(id: String, spawn: Vector2) -> void:
 	pending_map = id
@@ -903,15 +905,20 @@ func _process(delta: float) -> void:
 	# E5.5: cap the frame step and take up to three smaller steps so a slow device stays in real time
 	var dt: float = minf(delta, 0.1) * float(SPEEDS[int(save["speed_idx"])]) / 100.0
 	var steps: int = clampi(int(ceil(dt / (1.0 / 30.0))), 1, 3)
-	for i: int in steps:
-		_step(dt / float(steps))
+	if stop_t > 0.0:
+		stop_t = maxf(0.0, stop_t - delta)   # hit stop: the world holds still for a few frames on a big hit
+	else:
+		for i: int in steps:
+			_step(dt / float(steps))
 	# the camera leads a little toward where the ship aims and travels, eased so it never jumps
 	var lead: Vector2 = (aim_dir * 48.0 if firing else Vector2.ZERO) + pvel * 0.1
 	cam_look = cam_look.lerp(lead, 1.0 - exp(-delta * 3.0))
 	ship_ang = lerp_angle(ship_ang, aim_dir.angle(), 1.0 - exp(-delta * 22.0))
 	var zoom_want: float = CAM_ZOOM_BOSS if boss != null and active_arena != "" and active_arena == boss.group else CAM_ZOOMS[int(save["zoom"])]
 	zoom_now = lerpf(zoom_now, zoom_want, 1.0 - exp(-delta * 3.0))
-	cam.zoom = Vector2(zoom_now, zoom_now)
+	zoom_kick = maxf(0.0, zoom_kick - delta * 0.3)
+	var zk: float = zoom_now * (1.0 + zoom_kick * SHAKE_K[int(save["shake"])])
+	cam.zoom = Vector2(zk, zk)
 	cam.position = cam.position.lerp(_cam_target(), 1.0 - exp(-delta * 10.0))
 	shake = maxf(0.0, shake - delta * 30.0)
 	var sk: float = shake * SHAKE_K[int(save["shake"])]
@@ -919,6 +926,55 @@ func _process(delta: float) -> void:
 	view.redraw()
 	hud.queue_redraw()
 	proc_ms = lerpf(proc_ms, float(Time.get_ticks_usec() - t_in) / 1000.0, 0.1)
+
+# ---------- the look (v0.4 graphics, Phase 1): glow, a color grade per area, a vignette, hit stop, zoom punch ----------
+const GRADE: Dictionary = {"meadow": [1.02, 1.06, 1.16], "cave": [0.97, 1.10, 1.06], "keep": [1.0, 1.08, 1.10]}   # brightness, contrast, saturation
+var env: Environment
+var vignette: CanvasLayer
+var stop_t: float = 0.0
+var zoom_kick: float = 0.0
+
+func _setup_look() -> void:
+	env = Environment.new()
+	env.background_mode = Environment.BG_CANVAS
+	env.background_canvas_max_layer = 0     # the world glows, the HUD and the vignette stay sharp
+	env.glow_hdr_threshold = 0.82           # Compatibility has no HDR 2D, so only near-white pixels bloom
+	env.glow_intensity = 0.55
+	env.glow_bloom = 0.0
+	var we := WorldEnvironment.new()
+	we.environment = env
+	add_child(we)
+	vignette = CanvasLayer.new()
+	vignette.layer = 1
+	var cr := ColorRect.new()
+	cr.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sh := Shader.new()
+	sh.code = "shader_type canvas_item;\nvoid fragment() {\n\tvec2 d = (UV - 0.5) * vec2(1.25, 1.0);\n\tfloat v = smoothstep(0.45, 0.85, length(d));\n\tCOLOR = vec4(0.04, 0.03, 0.10, v * 0.42);\n}\n"
+	var mt := ShaderMaterial.new()
+	mt.shader = sh
+	cr.material = mt
+	vignette.add_child(cr)
+	add_child(vignette)
+	_apply_look()
+
+## Settings > Glow and color, and the grade for the area in play.
+func _apply_look() -> void:
+	if env == null:
+		return
+	var on: bool = bool(save.get("glow", true))
+	var gr: Array = GRADE.get(str(map.get("theme", "meadow")) if map != null else "meadow", GRADE["meadow"])
+	env.glow_enabled = on
+	env.adjustment_enabled = on
+	env.adjustment_brightness = gr[0]
+	env.adjustment_contrast = gr[1]
+	env.adjustment_saturation = gr[2]
+	vignette.visible = on
+
+## Holds the world still for a moment on a big hit. Never in a bot run.
+func hitstop(secs: float) -> void:
+	if not bot_mode:
+		stop_t = maxf(stop_t, secs)
 
 func _step(dt: float) -> void:
 	time += dt
@@ -1124,6 +1180,7 @@ func hurt_player(dmg: int) -> void:
 	invuln = [1.5, 1.0, 0.8][difficulty()]
 	hurt_flash = 0.25
 	shake = 9.0
+	hitstop(0.06)
 	sfx("hurt")
 	rumble(0.4, 0.7, 0.2)
 	if bool(save["invincible"]):
@@ -1308,6 +1365,7 @@ func damage_enemy(e: Enemy, dmg: float, at: Vector2) -> void:
 	save["kills"] = int(save["kills"]) + 1
 	sfx("pop", -8.0)
 	shake = maxf(shake, 3.0)
+	hitstop(0.04)
 	for i: int in int(10.0 + e.r * 0.4):
 		spark(e.pos, Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(60.0, 260.0), 0.5, 6.0, e.color.lightened(rng.randf() * 0.4))
 	for i: int in e.xp:
@@ -1342,6 +1400,8 @@ func _boss_down() -> void:
 		if b_kind[i] == 2:
 			b_kind[i] = 0
 	shake = 16.0
+	hitstop(0.16)
+	zoom_kick = 0.06
 	sfx("boss")
 	rumble(0.6, 1.0, 0.5)
 	if float(save["boss_s"]) <= 0.0 or boss_t < float(save["boss_s"]):
@@ -1627,7 +1687,7 @@ func _test_state() -> Dictionary:
 		"alive": alive, "awake": awake, "shots": b_live, "menu": hud.menu_open, "tab": hud.tab, "touch": touch_visible,
 		"dash": has_dash(), "flags": save["flags"], "cp": str(save["cp"]), "arena": active_arena, "kills": int(save["kills"]),
 		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "coins": int(save["coins"]), "coins_earned": coins_earned, "caches": (save["caches"] as Array).size(), "bought": save["bought"], "shop": hud.shop_open, "props": props.size(), "shield": shield_ready, "open_caches": open_caches.size(), "aim_assist": int(save["aim_assist"]), "mini": hud.mini_shown(), "rumbles": rumble_count, "shot_r": shot_size(), "minimap": bool(save["minimap"]), "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION,
-		"zoom": snappedf(zoom_now, 0.01), "zoom_set": int(save["zoom"]), "cps": save["cps"], "hint_pings": hint_pings, "markers": hud.marker_count,
+		"zoom": snappedf(zoom_now, 0.01), "glow": bool(save.get("glow", true)), "env_glow": env != null and env.glow_enabled, "vignette": vignette != null and vignette.visible, "stop_t": stop_t, "zoom_kick": zoom_kick, "font": hud.theme.default_font.resource_path if hud.theme.default_font != null else "", "zoom_set": int(save["zoom"]), "cps": save["cps"], "hint_pings": hint_pings, "markers": hud.marker_count,
 		"travel_btns": hud.travel_count(), "touch_left": bool(save["touch_left"]), "touch_fixed": bool(save["touch_fixed"]), "safe_colors": bool(save["safe_colors"]),
 		"move_o_x": snappedf(hud.move_o.x, 0.1), "touch_move_x": snappedf(touch_move.x, 0.01)}
 

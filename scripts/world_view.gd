@@ -40,17 +40,94 @@ var rift_tiles: Array[Vector2i] = []
 var draw_ms: float = 0.0                        # smoothed time spent in the two per-frame draws, for the test state
 
 func _ready() -> void:
-	font = ThemeDB.fallback_font
+	font = load("res://fonts/Fredoka-SemiBold.woff2")   # labels drawn in the world (v0.4 graphics)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS   # the ship sprites shrink smoothly (v0.3.1)
 	under = Under.new()
 	under.v = self
 	under.z_index = -2
 	add_child(under)
+	soft_tex = _radial(Color(1, 1, 1, 1), Color(1, 1, 1, 0), 0.0)
+	halo_tex = _radial(Color(1, 1, 1, 0.9), Color(1, 1, 1, 0), 0.15)
+	glow = Glow.new()
+	glow.v = self
+	glow.z_index = 1
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = add
+	add_child(glow)
 	map_changed()
 
 func redraw() -> void:
 	queue_redraw()
 	under.queue_redraw()
+	glow.queue_redraw()
+
+# ---------- the look (v0.4 graphics, Phase 1) ----------
+# One sun for the whole world: every shadow is a soft oval, pushed a little right and down.
+const SUN := Vector2(0.22, 0.0)
+var soft_tex: Texture2D
+var halo_tex: Texture2D
+var glow: Glow
+
+## A soft round texture: white in the middle, clear at the rim. Tinted when drawn.
+func _radial(inner: Color, outer: Color, hold: float) -> Texture2D:
+	var gr := Gradient.new()
+	gr.set_offset(0, 0.0)
+	gr.set_color(0, inner)
+	gr.set_offset(1, 1.0)
+	gr.set_color(1, outer)
+	if hold > 0.0:
+		gr.add_point(hold, inner)
+	var tx := GradientTexture2D.new()
+	tx.gradient = gr
+	tx.fill = GradientTexture2D.FILL_RADIAL
+	tx.fill_from = Vector2(0.5, 0.5)
+	tx.fill_to = Vector2(1.0, 0.5)
+	tx.width = 64
+	tx.height = 64
+	return tx
+
+## A soft shadow under anything that stands or flies. r is the half width. The oval is flatter than it is wide.
+func _soft(ci: CanvasItem, c: Vector2, r: float, a: float) -> void:
+	var w: float = r * 2.3
+	var h: float = r * 1.25
+	ci.draw_texture_rect(soft_tex, Rect2(c + SUN * r - Vector2(w, h) * 0.5, Vector2(w, h)), false, Color(0.05, 0.04, 0.12, a))
+
+## The glow layer draws added light: a halo behind shots, pickups and the ship's engine (Settings > Glow and color).
+class Glow extends Node2D:
+	var v: Node2D
+	func _draw() -> void:
+		v.call("_glow", self)
+
+func _halo(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
+	ci.draw_texture_rect(halo_tex, Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0), false, col)
+
+func _glow(ci: CanvasItem) -> void:
+	if g == null or g.mw == 0 or not bool(g.save.get("glow", true)):
+		return
+	var vr: Rect2 = _view_rect(60.0)
+	var safe: bool = bool(g.save["safe_colors"])
+	for i: int in g.b_hi:
+		var bk: int = g.b_kind[i]
+		if bk == 0 or not vr.has_point(g.b_pos[i]):
+			continue
+		var br: float = g.b_r[i]
+		if bk == 1:
+			_halo(ci, g.b_pos[i], br * 4.2, Color(0.25, 0.7, 1.0, 0.38) if not safe else Color(0.3, 0.5, 1.0, 0.38))
+		else:
+			_halo(ci, g.b_pos[i], br * 4.0, Color(1.0, 0.3, 0.6, 0.42) if not safe else Color(1.0, 0.65, 0.1, 0.42))
+	var t: float = g.time
+	for i: int in g.MAX_PICKS:
+		var kk: int = g.k_kind[i]
+		if kk == 0 or not vr.has_point(g.k_pos[i]):
+			continue
+		var pulse: float = 0.8 + 0.2 * sin(t * 4.0 + float(i))
+		var col: Color = Color(1.0, 0.75, 0.2) if kk == 3 else (Color(0.4, 1.0, 0.75) if kk == 1 else Color(1.0, 0.35, 0.5))
+		col.a = 0.32 * pulse
+		_halo(ci, g.k_pos[i], 24.0, col)
+	if g.phase != g.Phase.DEFEAT:
+		var back: Vector2 = g.ppos - Vector2.from_angle(g.ship_ang) * 20.0
+		_halo(ci, back, 26.0 + 6.0 * minf(1.0, g.pvel.length() / 400.0), Color(0.3, 0.85, 1.0, 0.30))
 
 func map_changed() -> void:
 	theme = str(g.map.get("theme", "meadow"))
@@ -251,7 +328,7 @@ func draw_under(ci: CanvasItem) -> void:
 		if not vr.has_point(p):
 			continue
 		var on: bool = str(g.save["cp"]) == str(cp["id"])
-		ci.draw_circle(p + Vector2(0, 14), 26.0, Color(0, 0, 0, 0.18))
+		_soft(ci, p + Vector2(0, 14), 26.0, 0.30)
 		ci.draw_rect(Rect2(p.x - 18.0, p.y + 2.0, 36.0, 16.0), Color("e9e2d0"))
 		ci.draw_rect(Rect2(p.x - 12.0, p.y - 6.0, 24.0, 10.0), Color("cfc6b0"))
 		var bob: float = sin(t * 3.0) * 4.0
@@ -267,7 +344,7 @@ func draw_under(ci: CanvasItem) -> void:
 			continue
 		var fb: float = sin(t * 2.6 + fp.x) * 5.0
 		var kind: String = str(f["kind"])
-		ci.draw_circle(fp + Vector2(0, 18), 14.0, Color(0, 0, 0, 0.18))
+		_soft(ci, fp + Vector2(0, 18), 14.0, 0.30)
 		var fq: Vector2 = fp + Vector2(0, fb - 4.0)
 		ci.draw_circle(fq, 22.0 + sin(t * 4.0) * 2.0, Color(1, 1, 0.7, 0.22))
 		if kind == "heart":
@@ -379,7 +456,7 @@ func _bar(e: Enemy) -> void:
 func _prop(ci: CanvasItem, c: Vector2, pr: Dictionary, t: float) -> void:
 	var kind: String = str(pr["k"])
 	var hurt: float = 0.0 if float(pr["max"]) <= 0.0 else 1.0 - float(pr["hp"]) / float(pr["max"])
-	ci.draw_circle(c + Vector2(0, 14), 22.0, Color(0, 0, 0, 0.16))
+	_soft(ci, c + Vector2(0, 14), 22.0, 0.28)
 	match kind:
 		"bush":
 			ci.draw_circle(c + Vector2(0, 4), 24.0, Color("3f8a3a"))
@@ -426,7 +503,7 @@ func _prop(ci: CanvasItem, c: Vector2, pr: Dictionary, t: float) -> void:
 			ci.draw_rect(Rect2(c.x - 22.0, c.y + 40.0, 44.0, 14.0), Color(0.75, 0.35, 0.3, 0.55))
 
 func _cache(ci: CanvasItem, p: Vector2, t: float) -> void:
-	ci.draw_circle(p + Vector2(0, 10), 16.0, Color(0, 0, 0, 0.18))
+	_soft(ci, p + Vector2(0, 10), 16.0, 0.30)
 	ci.draw_circle(p, 20.0 + sin(t * 4.0) * 2.0, Color(1.0, 0.85, 0.3, 0.2))
 	ci.draw_colored_polygon(PackedVector2Array([p + Vector2(-13, 10), p + Vector2(13, 10), p + Vector2(9, -6), p + Vector2(-9, -6)]), Color("8a5a34"))
 	ci.draw_rect(Rect2(p.x - 6.0, p.y - 11.0, 12.0, 6.0), Color("5e3a20"))
@@ -447,7 +524,7 @@ func _enemy(e: Enemy, t: float) -> void:
 	var look: Vector2 = (g.ppos - p).normalized()
 	var col: Color = Color.WHITE if e.flash > 0.0 else e.color
 	var dark: Color = e.color.darkened(0.5)
-	draw_circle(p + Vector2(0, e.r * 0.7), e.r * 0.9, Color(0, 0, 0, 0.18))
+	_soft(self, p + Vector2(0, e.r * 0.7), e.r * 0.95, 0.32)
 	match e.kind:
 		"drifter":
 			var wob: float = sin(t * 4.0 + e.seed) * 2.0
@@ -539,7 +616,7 @@ func _ship(t: float) -> void:
 	ship_last_t = t
 	if g.invuln > 0.0 and g.dash_t <= 0.0 and int(t * 20.0) % 2 == 0:
 		return
-	draw_circle(p + Vector2(0, 16), 15.0, Color(0, 0, 0, 0.2))
+	_soft(self, p + Vector2(0, 22), 17.0, 0.34)
 	if g.hint_t > 0.0:      # find hint (v0.3.4): a soft gold ring grows out from the ship
 		var hk: float = 1.0 - g.hint_t
 		draw_arc(p, 30.0 + hk * 70.0, 0.0, TAU, 40, Color(1.0, 0.88, 0.35, g.hint_t * 0.8), 3.0)

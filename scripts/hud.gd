@@ -115,6 +115,9 @@ func _ready() -> void:
 func _make_theme() -> Theme:
 	var th := Theme.new()
 	th.default_font_size = 22
+	th.default_font = load("res://fonts/Nunito-Bold.woff2")   # v0.4 graphics: Nunito for menus and text, Fredoka for headings (SIL OFL 1.1)
+	th.set_type_variation("Heading", "Label")
+	th.set_font("font", "Heading", load("res://fonts/Fredoka-SemiBold.woff2"))
 	var cols: Dictionary = {"normal": Color("24365c"), "hover": Color("2f4878"), "pressed": Color("1a2947"), "focus": Color("2f4878"), "disabled": Color("3a4050")}
 	for k: Variant in cols.keys():
 		var sb := StyleBoxFlat.new()
@@ -296,7 +299,7 @@ func _build_settings(holder: Control) -> void:
 	sc.follow_focus = true
 	sc.add_child(grid)
 	v.add_child(sc)
-	var ids: Array[String] = ["difficulty", "aim_assist", "speed_idx", "invincible", "zoom", "minimap", "markers", "hints", "shake", "rumble", "safe_colors", "stick_size", "touch_left", "touch_fixed", "music", "sfx", "show_fps", "fullscreen", "erase"]
+	var ids: Array[String] = ["difficulty", "aim_assist", "speed_idx", "invincible", "zoom", "minimap", "markers", "hints", "shake", "glow", "rumble", "safe_colors", "stick_size", "touch_left", "touch_fixed", "music", "sfx", "show_fps", "fullscreen", "erase"]
 	for id: String in ids:
 		if id == "fullscreen" and OS.has_feature("mobile"):
 			continue
@@ -321,7 +324,8 @@ func _build_title() -> void:
 	v.custom_minimum_size = Vector2(860, 0)
 	v.add_theme_constant_override("separation", 8)
 	c.add_child(v)
-	var name_l: Label = _label("TINY TAILWIND", 76)
+	var name_l: Label = _label("Tiny Tailwind", 84)
+	name_l.theme_type_variation = "Heading"   # Fredoka (v0.4 graphics)
 	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_l.add_theme_color_override("font_color", Color("ffd84a"))
 	name_l.add_theme_color_override("font_outline_color", Color("1f3b63"))
@@ -534,6 +538,7 @@ func _refresh_settings() -> void:
 	(set_btns["touch_fixed"] as Button).text = "Stick position: %s" % ("Fixed" if bool(g.save["touch_fixed"]) else "Follows thumb")
 	(set_btns["shake"] as Button).text = "Screen shake: %s" % g.SHAKE_NAMES[int(g.save["shake"])]
 	(set_btns["rumble"] as Button).text = "Rumble: %s" % on.call(bool(g.save["rumble"]))
+	(set_btns["glow"] as Button).text = "Glow and color: %s" % on.call(bool(g.save["glow"]))
 	(set_btns["stick_size"] as Button).text = "Touch sticks: %s" % g.STICK_NAMES[int(g.save["stick_size"])]
 	(set_btns["speed_idx"] as Button).text = "Game speed: %d%%" % g.SPEEDS[int(g.save["speed_idx"])]
 	(set_btns["invincible"] as Button).text = "Invincible: %s" % on.call(bool(g.save["invincible"]))
@@ -558,6 +563,9 @@ func _on_setting(id: String) -> void:
 			g.save["stick_size"] = (int(g.save["stick_size"]) + 1) % g.STICK_NAMES.size()
 		"invincible", "sfx", "show_fps", "minimap", "rumble", "markers", "hints", "safe_colors", "touch_fixed":
 			g.save[id] = not bool(g.save[id])
+		"glow":
+			g.save["glow"] = not bool(g.save["glow"])
+			g._apply_look()
 		"zoom":
 			g.save["zoom"] = (int(g.save["zoom"]) + 1) % g.CAM_ZOOMS.size()
 		"touch_left":
