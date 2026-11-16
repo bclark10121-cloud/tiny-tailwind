@@ -11,7 +11,7 @@ const WorldView := preload("res://scripts/world_view.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VERSION := "0.3.2"
+const VERSION := "0.3.3"
 const T := 64.0
 const PR := 17.0
 const MAX_BULLETS := 700
@@ -25,6 +25,8 @@ const SPEEDS: Array[int] = [100, 85, 70, 50]
 const AIM_NAMES: Array[String] = ["Off", "Light", "Strong", "Auto fire"]
 const SHAKE_NAMES: Array[String] = ["Off", "Low", "Full"]
 const SHAKE_K: Array[float] = [0.0, 0.4, 1.0]
+const CAM_ZOOM := 1.4                  # the camera sits closer so everything looks bigger (Brian, v0.3.3)
+const CAM_ZOOM_BOSS := 1.0             # the boss arena is taller than the close view, so the camera eases back out there
 const STICK_NAMES: Array[String] = ["Small", "Medium", "Large"]
 const STICK_K: Array[float] = [0.8, 1.0, 1.3]
 const PROP_R := 22.0                 # hit and block size of a bush, pot, crystal or the wagon
@@ -108,6 +110,7 @@ var end_t: float = -1.0
 var time: float = 0.0
 var seen_t: float = 0.0
 var shake: float = 0.0
+var zoom_now: float = CAM_ZOOM         # eased camera zoom
 var cam_look: Vector2 = Vector2.ZERO
 var ship_ang: float = 0.0             # drawn heading, eased toward the aim so turns look smooth  # smoothed camera lead toward aim and travel
 var proc_ms: float = 0.0
@@ -188,6 +191,7 @@ func _ready() -> void:
 	touch_visible = DisplayServer.is_touchscreen_available() and (OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios"))
 
 	cam = Camera2D.new()
+	cam.zoom = Vector2(CAM_ZOOM, CAM_ZOOM)
 	add_child(cam)
 	cam.make_current()
 	view = WorldView.new()
@@ -691,8 +695,18 @@ func _mark_seen() -> void:
 			if x >= 0 and y >= 0 and x < cw and y < ch:
 				seen_now[y * cw + x] = true
 
+## The part of the world the camera shows, in world pixels.
+func view_size() -> Vector2:
+	return get_viewport_rect().size / zoom_now
+
+## True when a world point is inside the camera view, grown by margin.
+func on_screen(p: Vector2, margin: float) -> bool:
+	var c: Vector2 = cam.get_screen_center_position()
+	var h: Vector2 = view_size() * 0.5 + Vector2(margin, margin)
+	return absf(p.x - c.x) < h.x and absf(p.y - c.y) < h.y
+
 func _cam_target() -> Vector2:
-	var vs: Vector2 = get_viewport_rect().size
+	var vs: Vector2 = view_size()
 	var tgt: Vector2 = ppos + cam_look
 	var half: Vector2 = vs * 0.5
 	var wpx: float = float(mw) * T
@@ -830,10 +844,13 @@ func _process(delta: float) -> void:
 	var lead: Vector2 = (aim_dir * 48.0 if firing else Vector2.ZERO) + pvel * 0.1
 	cam_look = cam_look.lerp(lead, 1.0 - exp(-delta * 3.0))
 	ship_ang = lerp_angle(ship_ang, aim_dir.angle(), 1.0 - exp(-delta * 22.0))
+	var zoom_want: float = CAM_ZOOM_BOSS if boss != null and active_arena != "" and active_arena == boss.group else CAM_ZOOM
+	zoom_now = lerpf(zoom_now, zoom_want, 1.0 - exp(-delta * 3.0))
+	cam.zoom = Vector2(zoom_now, zoom_now)
 	cam.position = cam.position.lerp(_cam_target(), 1.0 - exp(-delta * 10.0))
 	shake = maxf(0.0, shake - delta * 30.0)
 	var sk: float = shake * SHAKE_K[int(save["shake"])]
-	cam.offset = Vector2(rng.randf_range(-sk, sk), rng.randf_range(-sk, sk)) if sk > 0.1 else Vector2.ZERO
+	cam.offset = Vector2(rng.randf_range(-sk, sk), rng.randf_range(-sk, sk)) / zoom_now if sk > 0.1 else Vector2.ZERO
 	view.redraw()
 	hud.queue_redraw()
 	proc_ms = lerpf(proc_ms, float(Time.get_ticks_usec() - t_in) / 1000.0, 0.1)
@@ -987,8 +1004,8 @@ func _step_player(dt: float) -> void:
 		shoot_alt += 1
 		if shoot_alt % 2 == 0:
 			sfx("shoot", -17.0)
-	if mv.length_squared() > 0.05 and rng.randf() < 0.5:
-		spark(ppos - mv.normalized() * 14.0, -mv * 60.0 + Vector2(rng.randf_range(-20, 20), rng.randf_range(-20, 20)), 0.3, 4.0, Color(1.0, 0.85, 0.45, 0.8))
+	if mv.length_squared() > 0.05 and rng.randf() < 0.18:   # a light engine sprinkle (less since v0.3.3)
+		spark(ppos - mv.normalized() * 18.0, -mv * 35.0 + Vector2(rng.randf_range(-12, 12), rng.randf_range(-12, 12)), 0.2, 3.0, Color(1.0, 0.85, 0.45, 0.55))
 
 ## When the ship flies straight into the edge of a wall, slide it sideways around the corner instead of stopping dead.
 func _corner_nudge(np: Vector2, side: Vector2, step: float, dashing: bool) -> float:
@@ -1344,7 +1361,7 @@ func _step_enemies(dt: float) -> void:
 				e.st_t = 0.0
 		if e.fire != "none" and e.fire != "boss":
 			e.fire_t -= dt
-			if e.fire_t <= 0.0 and d2 < 600.0 * 600.0:
+			if e.fire_t <= 0.0 and d2 < 600.0 * 600.0 and on_screen(e.pos, 24.0):   # never fire from off screen (v0.3.3)
 				e.fire_t = e.rate * rate_k
 				if _clear_line(e.pos, ppos):
 					_enemy_fire(e, dn, bs_k)

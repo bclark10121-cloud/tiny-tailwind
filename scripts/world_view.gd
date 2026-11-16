@@ -109,7 +109,7 @@ func _hash(x: int, y: int) -> float:
 	return float(n % 1000) / 1000.0
 
 func _view_rect(margin: float) -> Rect2:
-	var vs: Vector2 = get_viewport_rect().size
+	var vs: Vector2 = g.view_size()
 	var c: Vector2 = g.cam.get_screen_center_position()
 	return Rect2(c - vs * 0.5 - Vector2(margin, margin), vs + Vector2(margin, margin) * 2.0)
 
@@ -534,10 +534,10 @@ func _ship(t: float) -> void:
 		return
 	draw_circle(p + Vector2(0, 16), 15.0, Color(0, 0, 0, 0.2))
 	# thruster flame from the engine, longer when moving
-	var flame: float = 8.0 + minf(18.0, g.pvel.length() * 0.045) + sin(t * 22.0) * 3.0
+	var flame: float = 3.0 + minf(7.0, g.pvel.length() * 0.018) + sin(t * 22.0) * 1.2   # small since v0.3.3
 	var tail: Vector2 = p - fwd * SHIP_SIZE * SHIP_TAIL
-	draw_colored_polygon(PackedVector2Array([tail + side * 6.5, tail - side * 6.5, tail - fwd * (flame + 9.0)]), Color("ffb347"))
-	draw_colored_polygon(PackedVector2Array([tail + side * 3.4, tail - side * 3.4, tail - fwd * (flame * 0.65 + 5.0)]), Color("fff0a8"))
+	draw_colored_polygon(PackedVector2Array([tail + side * 4.0, tail - side * 4.0, tail - fwd * (flame + 4.0)]), Color("ffb347"))
+	draw_colored_polygon(PackedVector2Array([tail + side * 2.0, tail - side * 2.0, tail - fwd * (flame * 0.6 + 2.0)]), Color("fff0a8"))
 	# the ship sprite: pick the bank frame, turn it to the heading, tint red on a hurt flash
 	var frame: int = clampi(roundi(ship_bank * 2.0) + 2, 0, 4)
 	var tint: Color = Color.WHITE if g.hurt_flash <= 0.0 else Color(1.0, 0.55, 0.55)

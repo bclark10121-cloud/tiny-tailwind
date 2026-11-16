@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.3.2. Brian decides the order.
+Updated 2026-11-15 for v0.3.3. Brian decides the order.
 
 ## Done
 
@@ -21,10 +21,11 @@ Updated 2026-11-15 for v0.3.2. Brian decides the order.
 - v0.3.0 (2026-11-15), Release 2: coins and the shop. Coins from enemies, trees and breakable bushes, crystals and pots. 10 hidden coin caches. Wren's Wagon with 7 items: Repair kit, Heart seed, Spare part, Coin magnet, Shield charm, Quick dash and Treasure map.
 - v0.3.1 (2026-11-15). Brian asked for a 3D modeled ship. The Swallow glider got Gemini reference views, a Meshy 3D model and a spec sheet. The game now draws the ship from five sprites rendered from that model. It banks into turns and sideways moves. Gameplay did not change.
 - v0.3.2 (2026-11-15). Brian found the Swallow glider did not look good in game. A new ship, the Manta: Gemini drew four top-down concepts, each tested at game size on grass and stone. Brian picked the Manta, and the Meshy 3D render over the flat drawing in a side by side game build. 60 px across, a wide rounded ray shape in sky blue and orange.
+- v0.3.3 (2026-11-15). Brian asked for a closer camera so everything is bigger, and less thrust from the back of the ship. The camera zooms in 1.4x and eases back out in the boss arena so the whole fight stays in view. Regular enemies no longer fire from off screen. The engine flame and the trail behind the ship are much smaller.
 
 ## Now
 
-- Brian plays v0.3.2 and reports how the Manta looks and feels, and how coins and prices feel.
+- Brian plays v0.3.3 and reports how the closer camera, the Manta and the smaller flame feel, and how coins and prices feel.
 - Next is Release 3, weapons (v0.4.0), unless Brian picks something else.
 
 ## Asked for by Brian, not built yet
@@ -120,6 +121,7 @@ Item 37 rides along with the art it covers: ship and add-on sheets in Release 5,
 - 2026-11-15: a reference spec sheet for the Swallow glider (Gemini views, then a Meshy 3D model), and spec sheets for enemies, new ships and more added as item 37.
 - 2026-11-15: render the Meshy 3D Swallow ship into sprites for the 2D game, as its own release. This is an exception to the rule that all art is drawn in code. Shipped in v0.3.1.
 - 2026-11-15: the Swallow did not look good in game. Start over with something closer to the compact top-down ships of the genre, but original. Picked the Manta concept at 60 px and the Meshy render. Shipped in v0.3.2.
+- 2026-11-15: a closer camera and less thrust from the back of the ship. Shipped in v0.3.3.
 
 ## Judgment calls made for v0.1.0 (Brian can change any)
 

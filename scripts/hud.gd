@@ -733,7 +733,7 @@ func draw_mini_dots(ci: Control) -> void:
 		var dp: Vector2 = d["pos"]
 		if g.seen_now.has((int(dp.y / 64.0) / 4) * cw + int(dp.x / 64.0) / 4):
 			ci.draw_circle(dp * k, 3.5, Color("6fb8ff"))
-	var vs: Vector2 = get_viewport_rect().size
+	var vs: Vector2 = g.view_size()
 	var c0: Vector2 = g.cam.get_screen_center_position()
 	ci.draw_rect(Rect2((c0 - vs * 0.5) * k, vs * k), Color(1, 1, 1, 0.35), false, 1.0)
 	if g.shop_pos != Vector2.INF:
