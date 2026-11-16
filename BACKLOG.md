@@ -99,6 +99,18 @@ Counting toward 300 collectibles: 30 per biome across 10 biomes.
 
 Item 37 rides along with the art it covers: ship and add-on sheets in Release 5, enemy and boss sheets in each release that adds them (Releases 4 and 6 to 9).
 
+## Unfinished standards items (2026-11-15)
+
+From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on a real device. Each line comes off when it is done. BC picks when.
+
+- The standards catch-up (Release 4): staged on a branch in `game-studio`, ships only when BC says (BC, 2026-11-15, 11:44 PM). Source move (G1.7), kit 1.9.1, Settings and five save slots (G5.11 to G5.13), Tester tools (G5.9), device hints and pause (G5.14, G5.15), the Menu order (G5.16), a 1024 icon master (G6.10), a privacy page (G6.13) and GitHub Releases (G2.10).
+- G4.2: BC to confirm the four pillars in `CLAUDE.md`.
+- G7.5: not tested on a real phone, a real controller or with sound on.
+- E1.2: `world_view.gd` and `hud.gd` reach `main.gd` through a plain `Node2D` reference, so those reads are not type checked.
+- E3.1, E4.6: draw calls and memory not measured on a device.
+- E5.5: the split frame step not checked on a slow phone.
+- E6.2: sound not heard. The tests ran headless.
+
 ## Later
 
 - Google Play listing, after v1.0.0 and only when BC says so.
