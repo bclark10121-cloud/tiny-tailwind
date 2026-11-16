@@ -1,6 +1,15 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-16 for v0.3.7. BC decides the order.
+Updated 2026-11-16 for v0.3.8. BC decides the order.
+
+## Graphics plan (BC, 2026-11-15)
+
+Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render look (not pixel art), Kenney's CC0 controller icons are fine, Fredoka and Nunito fonts (SIL OFL) are fine. Stay on the Compatibility renderer. Budget on Retroid-class handhelds: 12 ms a frame, under 100 draw calls, 4 to 6 real lights, one full-screen pass, under 128 MB of textures. Warm up effects on the title card.
+
+1. Phase 1, shipped in v0.3.8: soft shadows from one sun, glow halos on shots, pickups and the engine, gentle bloom, a color grade per area and a vignette (Settings > Glow and color), hit stop on kills, hits and the boss, a camera zoom punch on the boss, Nunito and Fredoka fonts.
+2. Phase 2, shipped in v0.3.8: a gold ring that closes in before an enemy fires, with a faint aim line for aimed shots. Glowing sparks. A ring that bursts out on each kill and on the warden. A glowing dash trail. A pale damage-lag part on enemy bars and the warden's bar. +1 and +2 numbers on pickups. The Menu and the shop ease in. Left for later: Kenney controller icons (the pack has to come from kenney.nl, which the cloud machine cannot reach, so it needs a download in BC's browser), and a dissolve on death (enemies are drawn in code, so the burst ring stands in for it until they are sprites in Phase 3).
+3. Phase 3: a style board, then 64 px dual-grid tiles per area (walls and floors first), then enemies and props rendered from Meshy models with normal maps, mood lights in the cave and the boss arena, animated water with foam, wind sway on grass and trees.
+4. Phase 4: paint colors for ships (palette swap), rounded 9-slice menu frames, a restyled minimap, drifting fog and cloud shadows.
 
 ## Done
 
@@ -26,12 +35,13 @@ Updated 2026-11-16 for v0.3.7. BC decides the order.
 - v0.3.5 (2026-11-16), the standards catch-up with no new content (Release 4). Five save slots with Continue, Play and Delete. The kit Settings panel with Music and Sound in five levels, Text size and Reduce motion, and this game's twelve options. The Menu row Resume, Settings, How to play, Ship, Journal, Map, Title. How to play with every control and the device in use marked. Hints and the title card follow the device in use. Pause on app, tab and controller loss. Rumble buzzes the phone too. Tester tools behind a code in test builds. A new icon of the Manta. A privacy page. GitHub Releases. The source moved to the private `game-studio` repo. Version code 11.
 - v0.3.6 (2026-11-16), sound fix (BC 2026-11-16: no music in the browser). The Music and Sfx buses come from `default_bus_layout.tres` instead of `AudioServer.add_bus()` at runtime, which left every sound silent in the browser build. New `tests/audio_test.py` measures the page's real sound output. Version code 12.
 - v0.3.7 (2026-11-16), laser shot sound (BC 2026-11-16: the shots should sound like a sci-fi laser, not a bullet). BC picked Classic Pew from six laser options. `tools/make_sfx.py` draws it. Each shot gets a small random pitch change. Version code 13.
+- v0.3.8 (2026-11-16), the graphics release (BC 2026-11-16: "yes" to moving the two staged graphics branches onto `game-studio` and shipping them). Graphics Phase 1 and Phase 2 from the plan above: glow, bloom, a color grade per area, a vignette, soft shadows, hit stop, a zoom punch on the warden, enemy wind-up rings and aim lines, kill rings, glowing sparks, a dash trail, damage-lag bars, pickup numbers, panels that ease in and the Nunito and Fredoka fonts. A new setting, Glow and color. Gameplay did not change. Version code 14.
 
 ## Now
 
-- BC tries v0.3.5 on a real phone and an Xbox controller.
-- The graphics work staged in BC's other chat (`staging/graphics-phase1` and `staging/graphics-phase2` in the page repo, built on v0.3.4 with the source still there) moves onto the new source in `game-studio` next.
+- BC tries v0.3.8 on a real phone, a Retroid and an Xbox controller, with an eye on the frame rate with the glow on.
 - Then Release 3, weapons (v0.4.0), unless BC picks something else.
+- Graphics Phase 3 and 4 wait for BC to pick them.
 
 ## Asked for by BC, not built yet
 
@@ -141,7 +151,21 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 - 2026-11-15: a closer camera and less thrust from the back of the ship. Shipped in v0.3.3.
 - 2026-11-16: the catch-up builds on v0.3.4 main. The graphics branches merge in later.
 - 2026-11-16: the ship's shots sound like a sci-fi laser. BC picked option 1, Classic Pew, and a full release now (v0.3.7) instead of waiting for the graphics release.
+- 2026-11-16: "yes" to moving graphics Phase 1 and Phase 2 onto `game-studio` and shipping them as the next release. Shipped in v0.3.8.
 - 2026-11-15: all seven suggested QoL items in the next release unless they need splitting. Six shipped in v0.3.4. Standard Settings and save slots go with the standards catch-up release, since they come from kit 1.8.0.
+
+## Judgment calls made in v0.3.8 (BC to confirm or change)
+
+1. Version 0.3.8, not 0.4.0. The roadmap keeps v0.4.0 for weapons, as in v0.3.5.
+2. Phase 1 and Phase 2 ship together in one release, not two.
+3. Glow and color moved into the kit Settings panel as this game's thirteenth option, right after Find hints, On by default. The graphics branches had put it on the old Settings page, which v0.3.5 replaced.
+4. The title card now reads "Tiny Tailwind" in Fredoka in place of "TINY TAILWIND" in capitals, as the graphics branch built it.
+5. The zoom punch follows Screen shake and Reduce motion. Hit stop stays on with Reduce motion, since it holds the picture still and does not move it.
+6. A line in the graphics branch's browser test hid the find hint screenshot behind a comment. Fixed.
+7. The two graphics branches in the page repo (`staging/graphics-phase1` and `staging/graphics-phase2`) stay until BC says to delete them.
+8. The Game Shelf picture and the game page screenshots are new, since the look changed.
+9. The browser test still expected version 0.3.6 on the title card. It now reads the version from `main.gd`, so it never goes stale again.
+10. Standards 2026-11-16a landed during this release. The look check (G7.11) made no contact sheets: the game has no approved reference art yet (G8.6 is an open item). The screenshots of every area were viewed instead. The style block and reference pictures wait for the next art step, with BC's yes on the block.
 
 ## Judgment calls made in v0.3.7 (BC to confirm or change)
 
