@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-16 for v0.3.6. BC decides the order.
+Updated 2026-11-16 for v0.3.7. BC decides the order.
 
 ## Done
 
@@ -25,6 +25,7 @@ Updated 2026-11-16 for v0.3.6. BC decides the order.
 - v0.3.4 (2026-11-15), quality of life. BC took all the suggested QoL items. Edge markers for enemies off screen, Wren's Wagon and the next goal. A Camera setting (Close or Normal). Fast travel between reached checkpoints from the Map page. Find hints: a soft chime and a gold ring near a keepsake, plus keepsake and cache counts per area on the Map page. A left-handed touch layout and fixed sticks. Color-safe shot colors. Each one is a setting.
 - v0.3.5 (2026-11-16), the standards catch-up with no new content (Release 4). Five save slots with Continue, Play and Delete. The kit Settings panel with Music and Sound in five levels, Text size and Reduce motion, and this game's twelve options. The Menu row Resume, Settings, How to play, Ship, Journal, Map, Title. How to play with every control and the device in use marked. Hints and the title card follow the device in use. Pause on app, tab and controller loss. Rumble buzzes the phone too. Tester tools behind a code in test builds. A new icon of the Manta. A privacy page. GitHub Releases. The source moved to the private `game-studio` repo. Version code 11.
 - v0.3.6 (2026-11-16), sound fix (BC 2026-11-16: no music in the browser). The Music and Sfx buses come from `default_bus_layout.tres` instead of `AudioServer.add_bus()` at runtime, which left every sound silent in the browser build. New `tests/audio_test.py` measures the page's real sound output. Version code 12.
+- v0.3.7 (2026-11-16), laser shot sound (BC 2026-11-16: the shots should sound like a sci-fi laser, not a bullet). BC picked Classic Pew from six laser options. `tools/make_sfx.py` draws it. Each shot gets a small random pitch change. Version code 13.
 
 ## Now
 
@@ -139,7 +140,16 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 - 2026-11-15: the Swallow did not look good in game. Start over with something closer to the compact top-down ships of the genre, but original. Picked the Manta concept at 60 px and the Meshy render. Shipped in v0.3.2.
 - 2026-11-15: a closer camera and less thrust from the back of the ship. Shipped in v0.3.3.
 - 2026-11-16: the catch-up builds on v0.3.4 main. The graphics branches merge in later.
+- 2026-11-16: the ship's shots sound like a sci-fi laser. BC picked option 1, Classic Pew, and a full release now (v0.3.7) instead of waiting for the graphics release.
 - 2026-11-15: all seven suggested QoL items in the next release unless they need splitting. Six shipped in v0.3.4. Standard Settings and save slots go with the standards catch-up release, since they come from kit 1.8.0.
+
+## Judgment calls made in v0.3.7 (BC to confirm or change)
+
+1. A patch number (v0.3.7) for the shot sound only. No other change rides along.
+2. Classic Pew is drawn by `tools/make_sfx.py` at the game's sound rate (mono 22.05 kHz), so it sounds a little softer on the top end than the 44.1 kHz sample BC heard. Same shape and length (0.16 seconds).
+3. The shot keeps its old level (-17 dB) and still sounds on every second shot, as before. The new sound is longer, so the overall loudness stays about the same.
+4. Each shot plays at a random pitch within 6 percent up or down. Only the shot uses this. Every other sound keeps its pitch.
+5. The Game Shelf picture stays as it is: nothing on screen changed.
 
 ## Judgment calls made in v0.3.6 (BC to confirm or change)
 
