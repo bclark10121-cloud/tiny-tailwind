@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-16 for v0.3.5 (staged). BC decides the order.
+Updated 2026-11-16 for v0.3.5. BC decides the order.
 
 ## Done
 
@@ -23,12 +23,12 @@ Updated 2026-11-16 for v0.3.5 (staged). BC decides the order.
 - v0.3.2 (2026-11-15). BC found the Swallow glider did not look good in game. A new ship, the Manta: Gemini drew four top-down concepts, each tested at game size on grass and stone. BC picked the Manta, and the Meshy 3D render over the flat drawing in a side by side game build. 60 px across, a wide rounded ray shape in sky blue and orange.
 - v0.3.3 (2026-11-15). BC asked for a closer camera so everything is bigger, and less thrust from the back of the ship. The camera zooms in 1.4x and eases back out in the boss arena so the whole fight stays in view. Regular enemies no longer fire from off screen. The engine flame and the trail behind the ship are much smaller.
 - v0.3.4 (2026-11-15), quality of life. BC took all the suggested QoL items. Edge markers for enemies off screen, Wren's Wagon and the next goal. A Camera setting (Close or Normal). Fast travel between reached checkpoints from the Map page. Find hints: a soft chime and a gold ring near a keepsake, plus keepsake and cache counts per area on the Map page. A left-handed touch layout and fixed sticks. Color-safe shot colors. Each one is a setting.
-- v0.3.5 (staged 2026-11-16 on the branch `staging/tiny-tailwind-catchup`, ships when BC says), the standards catch-up with no new content (Release 4). Five save slots with Continue, Play and Delete. The kit Settings panel with Music and Sound in five levels, Text size and Reduce motion, and this game's twelve options. The Menu row Resume, Settings, How to play, Ship, Journal, Map, Title. How to play with every control and the device in use marked. Hints and the title card follow the device in use. Pause on app, tab and controller loss. Rumble buzzes the phone too. Tester tools behind a code in test builds. A new icon of the Manta. A privacy page. GitHub Releases. The source moved to the private `game-studio` repo. Version code 11.
+- v0.3.5 (2026-11-16), the standards catch-up with no new content (Release 4). Five save slots with Continue, Play and Delete. The kit Settings panel with Music and Sound in five levels, Text size and Reduce motion, and this game's twelve options. The Menu row Resume, Settings, How to play, Ship, Journal, Map, Title. How to play with every control and the device in use marked. Hints and the title card follow the device in use. Pause on app, tab and controller loss. Rumble buzzes the phone too. Tester tools behind a code in test builds. A new icon of the Manta. A privacy page. GitHub Releases. The source moved to the private `game-studio` repo. Version code 11.
 
 ## Now
 
-- BC says when v0.3.5 ships. Then he tries it on a real phone and an Xbox controller.
-- The graphics work staged in BC's other chat (`staging/graphics-phase1` and `staging/graphics-phase2` in the page repo, built on v0.3.4 with the source still there) moves onto the new source in `game-studio` once v0.3.5 ships.
+- BC tries v0.3.5 on a real phone and an Xbox controller.
+- The graphics work staged in BC's other chat (`staging/graphics-phase1` and `staging/graphics-phase2` in the page repo, built on v0.3.4 with the source still there) moves onto the new source in `game-studio` next.
 - Then Release 3, weapons (v0.4.0), unless BC picks something else.
 
 ## Asked for by BC, not built yet
