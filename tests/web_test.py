@@ -20,7 +20,7 @@ async def main():
             r.check(await r.state() is None, "no test state without the whole-word ?test flag")
             await r.open(base + "index.html?test")
             s = await r.wait_phase([TITLE], 90); await pg.wait_for_timeout(2500); await r.shot("01_title")
-            r.check(s.get("version") == "0.3.3", "title card up, version %s" % s.get("version"))
+            r.check(s.get("version") == "0.3.4", "title card up, version %s" % s.get("version"))
             r.check("none seen yet" in s["pad_line"], "with no controller the title card says so")
             await r.key("Enter"); s = await r.wait_phase([PLAY]); await pg.wait_for_timeout(1200); await r.shot("02_start")
             await r.cmd("low"); await pg.wait_for_timeout(900); s = await r.state(); r.check(s["hp"] == 1 and s["phase"] == PLAY, "one heart left shows the low health warning"); await r.shot("02b_low_health"); await r.cmd("heal")
@@ -43,6 +43,16 @@ async def main():
             for i in range(3): await r.cmd("set_aim_assist", 900)
             s = await r.state(); r.check(s["aim_assist"] == 0, "Aim assist cycles Light, Strong, Auto fire, Off (%d)" % s["aim_assist"])
             await r.cmd("set_aim_assist", 900); s = await r.state(); r.check(s["aim_assist"] == 1, "Aim assist back on Light")
+            # v0.3.4: camera setting, edge markers and color-safe shots
+            await r.cmd("heal"); s = await r.state(); r.check(s["zoom_set"] == 0 and s["zoom"] > 1.3, "the camera starts Close (zoom %.2f)" % s["zoom"])
+            r.check(s["markers"] >= 1, "edge markers point to enemies off screen or the next goal (%d)" % s["markers"]); await r.shot("04a_markers")
+            await r.cmd("set_zoom", 2500); s = await r.state(); r.check(s["zoom_set"] == 1 and s["zoom"] < 1.08, "Camera: Normal eases the view out (zoom %.2f)" % s["zoom"]); await r.shot("04a_camera_normal")
+            await r.cmd("set_zoom", 2500); s = await r.state(); r.check(s["zoom_set"] == 0 and s["zoom"] > 1.3, "Camera: Close eases back in (zoom %.2f)" % s["zoom"])
+            await r.cmd("set_markers", 600); s = await r.state(); r.check(s["markers"] == 0, "the Edge markers setting hides the markers")
+            await r.cmd("set_markers", 600); s = await r.state(); r.check(s["markers"] >= 1, "the Edge markers setting shows them again (%d)" % s["markers"])
+            await r.cmd("set_safe_colors", 300); await r.cmd("heal"); await pg.keyboard.down("ArrowRight"); await pg.wait_for_timeout(1500); await r.shot("04b_color_safe"); await pg.keyboard.up("ArrowRight")
+            s = await r.state(); r.check(s["safe_colors"], "Shot colors switch to Color-safe")
+            await r.cmd("set_safe_colors", 700); s = await r.state(); r.check(not s["safe_colors"], "Shot colors switch back to Standard")
             # auto pause when the game loses focus
             await r.cmd("heal"); s = await r.wait_for(lambda s: s["phase"] == PLAY and not s["menu"], 20, "back in play before auto pause"); r.notes.append("before auto pause: phase %s menu %s hp %s" % (s["phase"], s["menu"], s["hp"]))
             await r.cmd("focus_out"); s = await r.wait_for(lambda s: s["menu"], 10, "auto pause opens the Menu"); r.check(s["menu"] and s["paused"], "leaving the game opens the Menu and pauses")
@@ -61,6 +71,10 @@ async def main():
             await pg.keyboard.down("s"); s = await r.wait_for(lambda s: s["caches"] > k0, 10, "cache found"); await pg.keyboard.up("s")
             r.check(s["caches"] == k0 + 1 and s["coins"] >= c0 + 8, "a coin cache adds 8 coins (%d to %d)" % (c0, s["coins"]))
             await r.shot("04d_cache")
+            # v0.3.4: a keepsake nearby gives a find hint
+            s = await r.state(); h0 = s["hint_pings"]
+            await r.cmd("heal"); await r.cmd("warp_find"); s = await r.wait_for(lambda s: s["hint_pings"] > h0, 15, "a find hint"); await pg.wait_for_timeout(200); await r.shot("04g_find_hint")
+            r.check(s["hint_pings"] > h0, "a keepsake nearby gives a find hint (%d to %d)" % (h0, s["hint_pings"]))
             # Wren's Wagon: fly into the front of the wagon, buy with the keyboard, close with Esc
             await r.cmd("coins_100"); await r.cmd("heal"); await r.cmd("warp_shop"); await r.wait_for(lambda s: s["phase"] == PLAY and abs(s["y"] - 1248) < 40, 30, "below the wagon")
             await pg.keyboard.down("w"); s = await r.wait_for(lambda s: s["shop"], 10, "the shop opens"); await pg.keyboard.up("w")
@@ -78,9 +92,21 @@ async def main():
             for t in ("journal", "map", "settings"):
                 await r.cmd("tab_" + t); await pg.wait_for_timeout(700); s = await r.state(); r.check(s["tab"] == t, "page %s opens" % t); await r.shot("07_menu_" + t)
             await r.key("Escape", 500); s = await r.state(); r.check(not s["menu"] and not s["paused"], "Esc closes the Menu")
+            # v0.3.4: fast travel from the Map page
+            await r.cmd("all_cps"); await r.cmd("tab_map", 800); s = await r.state(); r.check(s["travel_btns"] >= 7, "the Map page lists reached checkpoints for fast travel (%d)" % s["travel_btns"]); await r.shot("07b_fast_travel")
+            await r.key("Escape", 500)
+            await r.cmd("travel_c_mouth"); s = await r.wait_for(lambda s: s["map"] == "cave" and s["phase"] == PLAY, 30, "fast travel to the cave mouth")
+            r.check(s["cp"] == "c_mouth", "fast travel lands at the Cave mouth checkpoint (%s)" % s["cp"])
+            await r.cmd("travel_m_glade"); s = await r.wait_for(lambda s: s["map"] == "meadow" and s["phase"] == PLAY, 30, "fast travel back to the glade")
             # touch controls show on touch and hide on a key (E5.4)
             cdp = await r.touch_drag(200, 520, 260, 500, 900); s = await r.state(); r.check(s["touch"], "touch controls show on a touch"); await r.shot("08_touch")
             await r.touch_end(cdp); await r.key("a", 400); s = await r.state(); r.check(not s["touch"], "touch controls hide on a key")
+            # v0.3.4: left-handed layout and fixed sticks
+            await r.cmd("set_touch_left", 300); cdp = await r.touch_drag(1000, 520, 1060, 520, 600); s = await r.state()
+            r.check(s["touch_left"] and s["touch_move_x"] > 0.3, "Left-handed: the right thumb moves the ship (%.2f)" % s["touch_move_x"]); await r.shot("08b_touch_left"); await r.touch_end(cdp)
+            await r.cmd("set_touch_left", 300); await r.cmd("set_touch_fixed", 300); cdp = await r.touch_drag(300, 400, 320, 400, 600); s = await r.state()
+            r.check(s["touch_fixed"] and abs(s["move_o_x"] - 150.0) < 2.0, "Fixed sticks: the move stick stays in its spot (x %.0f)" % s["move_o_x"]); await r.touch_end(cdp)
+            await r.cmd("set_touch_fixed", 300); await r.key("a", 400)
             # cave and the dash
             await r.cmd("heal"); await r.cmd("warp_core"); await r.wait_for(lambda s: s["map"] == "cave" and s["phase"] == PLAY, 30, "cave loads"); await pg.wait_for_timeout(1500); await r.shot("09_cave")
             await r.cmd("give_dash"); await pg.wait_for_timeout(900); s = await r.state(); r.check(s["dash"], "the Dash Core gives the dash"); await r.shot("10_dash_found")

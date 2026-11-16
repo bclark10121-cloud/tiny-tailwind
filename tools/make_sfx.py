@@ -43,4 +43,5 @@ save("coin", seq(sweep(1760, 1760, 0.05, "square", 18), sweep(2350, 2350, 0.12, 
 save("buy", seq(mix(noise(0.06, 30, 0.7), sweep(1320, 1320, 0.06, "square", 20)), sweep(1760, 1760, 0.06, "square", 16), sweep(2640, 2640, 0.22, "sine", 8)), 0.55)
 save("break", mix(noise(0.25, 14, 0.45), sweep(220, 70, 0.2, "saw", 14)), 0.75)
 save("leaf", noise(0.16, 18, 0.6), 0.35)
+save("hint", seq(sweep(1046, 1046, 0.12, "sine", 7), sweep(1568, 1568, 0.32, "sine", 5)), 0.3)   # find hint chime (v0.3.4)
 print("sfx done")

@@ -9,7 +9,7 @@ class Map:
     def fill(s, x0, y0, x1, y1, c="."):
         for y in range(y0, y1 + 1):
             for x in range(x0, x1 + 1): s.g[y][x] = c
-    def cp(s, i, x, y): s.d["checkpoints"].append({"id": i, "x": x, "y": y})
+    def cp(s, i, x, y, name): s.d["checkpoints"].append({"id": i, "x": x, "y": y, "name": name})   # name shows in fast travel (v0.3.4)
     def door(s, x, y, to, tx, ty): s.fill(x, y, x, y); s.d["doors"].append({"x": x, "y": y, "to": to, "tx": tx, "ty": ty})
     def find(s, i, x, y): assert s.g[y][x] == ".", (i, x, y); s.d["finds"].append({"id": i, "x": x, "y": y})
     def en(s, kind, pts, g=""):
@@ -53,7 +53,7 @@ m.fill(31, 17, 37, 18); m.fill(38, 10, 42, 26)    # east bank
 m.fill(43, 10, 44, 26, "^")                       # the Rift
 m.fill(45, 10, 52, 26)                            # far bank
 m.fill(48, 8, 49, 9); m.fill(46, 3, 52, 7)        # north-east nook
-m.cp("m_glade", 8, 17); m.cp("m_cross", 26, 17); m.cp("m_bank", 40, 18); m.cp("m_far", 48, 18)
+m.cp("m_glade", 8, 17, "Glade"); m.cp("m_cross", 26, 17, "Crossroads"); m.cp("m_bank", 40, 18, "Riverbank"); m.cp("m_far", 48, 18, "Far meadow")
 m.door(37, 4, "cave", 3, 12); m.door(53, 18, "dungeon", 3, 17)
 for i, (x, y) in enumerate([(5, 4), (3, 24), (33, 13), (30, 32), (4, 27), (51, 32), (47, 12), (51, 4), (21, 3)]): m.find("m%d" % (i + 1), x, y)
 m.en("drifter", [(12, 5), (14, 7), (6, 7), (18, 18), (24, 15), (28, 20), (22, 4), (30, 3)])
@@ -75,7 +75,7 @@ c.fill(15, 5, 16, 6); c.fill(9, 1, 23, 4)          # chamber B
 c.fill(20, 11, 23, 12); c.fill(24, 8, 31, 15)      # chamber C, home of the Dash Core
 c.fill(27, 16, 28, 18); c.fill(20, 19, 32, 22); c.fill(24, 19, 25, 22, "^")   # chamber D with a rift
 c.fill(14, 17, 15, 18); c.fill(8, 19, 17, 22); c.fill(9, 21, 10, 22, "~")     # chamber E
-c.cp("c_mouth", 4, 12); c.cp("c_core", 21, 11)
+c.cp("c_mouth", 4, 12, "Cave mouth"); c.cp("c_core", 21, 11, "Core chamber")
 c.door(1, 12, "meadow", 35, 4)
 for i, (x, y) in [("c1", (13, 8)), ("c2", (10, 2)), ("c_dash", (29, 11)), ("c4", (21, 20)), ("c5", (12, 20))]: c.find(i, x, y)
 c.en("mite", [(13, 10), (14, 14), (18, 9), (18, 15), (12, 3), (13, 2), (20, 2), (21, 3)])
@@ -95,7 +95,7 @@ d.fill(28, 13, 34, 21)                             # hub
 d.fill(30, 8, 32, 12); d.fill(26, 2, 36, 7)        # north room
 d.fill(30, 22, 32, 25); d.fill(24, 26, 38, 32)     # arena 2
 d.fill(35, 16, 37, 18); d.fill(38, 9, 50, 25)      # boss hall
-d.cp("d_gate", 4, 17); d.cp("d_hub", 31, 17)
+d.cp("d_gate", 4, 17, "Keep gate"); d.cp("d_hub", 31, 17, "Keep hall")
 d.door(1, 17, "meadow", 51, 18)
 for i, (x, y) in [("d1", (35, 3)), ("d2", (27, 3)), ("d3", (37, 31)), ("d4", (25, 31)), ("d5", (49, 10)), ("d6", (49, 24))]: d.find(i, x, y)
 d.en("spitter", [(14, 13), (20, 21)], "d_a1"); d.en("charger", [(20, 13), (14, 21)], "d_a1"); d.en("mite", [(17, 15), (17, 19), (15, 17), (19, 17)], "d_a1")

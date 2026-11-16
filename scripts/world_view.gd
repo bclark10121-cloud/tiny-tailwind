@@ -319,6 +319,7 @@ func _draw() -> void:
 	if g.phase != g.Phase.DEFEAT:
 		_ship(t)
 	# shots, up to the highest slot in use
+	var safe: bool = bool(g.save["safe_colors"])
 	for i: int in g.b_hi:
 		var bk: int = g.b_kind[i]
 		if bk == 0:
@@ -327,14 +328,20 @@ func _draw() -> void:
 		var br: float = g.b_r[i]
 		if bk == 1:
 			var tail: Vector2 = bp - (g.b_vel[i] as Vector2) * 0.022
-			draw_line(tail, bp, Color(0.23, 0.82, 0.91, 0.5), br * 1.3)
-			draw_circle(bp, br + 3.0, Color("3ad0e8"))
+			draw_line(tail, bp, Color(0.23, 0.82, 0.91, 0.5) if not safe else Color(0.35, 0.65, 1.0, 0.5), br * 1.3)
+			draw_circle(bp, br + 3.0, Color("3ad0e8") if not safe else Color("4a90ff"))
 			draw_circle(bp, br - 0.5, Color("fffbe0"))
 		else:
 			var vr2: float = br * 1.3       # drawn bigger than the hit size: easy to see and fair to dodge
-			draw_circle(bp, vr2 + 3.0, Color("5a1040"))
-			draw_circle(bp, vr2, Color("ff5fb0"))
-			draw_circle(bp, vr2 * 0.45, Color.WHITE)
+			if safe:
+				# color-safe (v0.3.4): amber with a thick dark ring and a dark core, so the shape differs too
+				draw_circle(bp, vr2 + 4.0, Color("1a1a1a"))
+				draw_circle(bp, vr2, Color("ffb000"))
+				draw_circle(bp, vr2 * 0.45, Color("1a1a1a"))
+			else:
+				draw_circle(bp, vr2 + 3.0, Color("5a1040"))
+				draw_circle(bp, vr2, Color("ff5fb0"))
+				draw_circle(bp, vr2 * 0.45, Color.WHITE)
 	# sparks
 	for i: int in g.MAX_PARTS:
 		var life: float = g.p_life[i]
@@ -533,6 +540,9 @@ func _ship(t: float) -> void:
 	if g.invuln > 0.0 and g.dash_t <= 0.0 and int(t * 20.0) % 2 == 0:
 		return
 	draw_circle(p + Vector2(0, 16), 15.0, Color(0, 0, 0, 0.2))
+	if g.hint_t > 0.0:      # find hint (v0.3.4): a soft gold ring grows out from the ship
+		var hk: float = 1.0 - g.hint_t
+		draw_arc(p, 30.0 + hk * 70.0, 0.0, TAU, 40, Color(1.0, 0.88, 0.35, g.hint_t * 0.8), 3.0)
 	# thruster flame from the engine, longer when moving
 	var flame: float = 3.0 + minf(7.0, g.pvel.length() * 0.018) + sin(t * 22.0) * 1.2   # small since v0.3.3
 	var tail: Vector2 = p - fwd * SHIP_SIZE * SHIP_TAIL

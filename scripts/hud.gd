@@ -34,6 +34,10 @@ var ship_rows: Dictionary = {}
 var journal_grid: GridContainer
 var journal_head: Label
 var map_ctl: Control
+var area_label: Label                   # found and total per area (v0.3.4)
+var travel_note: Label
+var travel_btns: Dictionary = {}        # checkpoint id -> Button, made once (v0.3.4)
+var marker_count: int = 0                # edge markers drawn last frame, for the browser test
 var set_btns: Dictionary = {}
 var erase_armed: bool = false
 var pad_title: Label
@@ -181,7 +185,7 @@ func _layout() -> void:
 	var pw: float = minf(940.0, sm.size.x - 40.0)
 	panel.position = Vector2(sm.position.x + (sm.size.x - pw) * 0.5, sm.position.y + 80.0)
 	panel.size = Vector2(pw, sm.size.y - 100.0)
-	dash_c = Vector2(sm.end.x - 96.0, sm.position.y + sm.size.y * 0.44)
+	dash_c = Vector2(sm.position.x + 96.0 if bool(g.save["touch_left"]) else sm.end.x - 96.0, sm.position.y + sm.size.y * 0.44)
 	_place_mini()
 	if shop_panel != null:
 		var sw: float = minf(860.0, sm.size.x - 40.0)
@@ -250,8 +254,34 @@ func _build_map(holder: Control) -> void:
 	map_ctl = Control.new()
 	map_ctl.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	map_ctl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_ctl.custom_minimum_size = Vector2(0, 220)
 	map_ctl.draw.connect(_draw_map)
 	v.add_child(map_ctl)
+	area_label = _label("", 18)
+	area_label.add_theme_color_override("font_color", Color("ffe066"))
+	v.add_child(area_label)
+	var tr := HBoxContainer.new()
+	tr.add_theme_constant_override("separation", 10)
+	v.add_child(tr)
+	var tl: Label = _label("Fast travel:", 20)
+	tl.autowrap_mode = TextServer.AUTOWRAP_OFF
+	tl.custom_minimum_size = Vector2(130, 56)
+	tl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tr.add_child(tl)
+	var flow := HFlowContainer.new()
+	flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	flow.add_theme_constant_override("h_separation", 8)
+	flow.add_theme_constant_override("v_separation", 8)
+	tr.add_child(flow)
+	for id: Variant in g.cp_pos.keys():
+		var b: Button = _button(g.cp_name(str(id)), _on_travel.bind(str(id)))
+		b.custom_minimum_size = Vector2(0, 56)
+		b.visible = false
+		flow.add_child(b)
+		travel_btns[str(id)] = b
+	travel_note = _label("", 18)
+	travel_note.add_theme_color_override("font_color", Color("9fe8ff"))
+	v.add_child(travel_note)
 
 func _build_settings(holder: Control) -> void:
 	var v: VBoxContainer = _page(holder, "settings")
@@ -266,7 +296,7 @@ func _build_settings(holder: Control) -> void:
 	sc.follow_focus = true
 	sc.add_child(grid)
 	v.add_child(sc)
-	var ids: Array[String] = ["difficulty", "aim_assist", "speed_idx", "invincible", "minimap", "shake", "rumble", "stick_size", "music", "sfx", "show_fps", "fullscreen", "erase"]
+	var ids: Array[String] = ["difficulty", "aim_assist", "speed_idx", "invincible", "zoom", "minimap", "markers", "hints", "shake", "rumble", "safe_colors", "stick_size", "touch_left", "touch_fixed", "music", "sfx", "show_fps", "fullscreen", "erase"]
 	for id: String in ids:
 		if id == "fullscreen" and OS.has_feature("mobile"):
 			continue
@@ -420,6 +450,7 @@ func open_tab(t: String) -> void:
 			_refresh_journal()
 		"map":
 			map_ctl.queue_redraw()
+			_refresh_map()
 		"settings":
 			_refresh_settings()
 
@@ -450,11 +481,57 @@ func _refresh_journal() -> void:
 			l.text = "???\n    Not found yet."
 			l.modulate = Color(1, 1, 1, 0.55)
 
+func _refresh_map() -> void:
+	var maps: Dictionary = g.world["maps"]
+	var parts: Array[String] = []
+	var have: Array = g.save["finds"]
+	var got_c: Array = g.save["caches"]
+	for mid: Variant in maps.keys():
+		var m: Dictionary = maps[mid]
+		var nf: int = 0
+		var tf: int = 0
+		for f: Variant in (m["finds"] as Array):
+			tf += 1
+			if have.has(str((f as Dictionary)["id"])):
+				nf += 1
+		var nc: int = 0
+		var tc: int = 0
+		for c: Variant in (m.get("caches", []) as Array):
+			tc += 1
+			if got_c.has(str((c as Dictionary)["id"])):
+				nc += 1
+		parts.append("%s: keepsakes %d / %d, caches %d / %d" % [str(m["name"]), nf, tf, nc, tc])
+	area_label.text = "   ".join(parts)
+	var ok: bool = g.can_travel()
+	var reached: Array = g.save["cps"]
+	for id: Variant in travel_btns.keys():
+		var b: Button = travel_btns[id]
+		b.visible = reached.has(str(id))
+		b.disabled = not ok or str(id) == str(g.save["cp"]) and str((g.cp_pos[str(id)] as Array)[0]) == g.map_id and g.ppos.distance_to((g.cp_pos[str(id)] as Array)[1]) < 200.0
+	travel_note.text = "Reach a checkpoint to add it here." if ok else "Fast travel works once the fight is over."
+
+func _on_travel(id: String) -> void:
+	_close_menu()
+	g.travel_to(id)
+
+func travel_count() -> int:
+	var n: int = 0
+	for b: Variant in travel_btns.values():
+		if (b as Button).visible and not (b as Button).disabled:
+			n += 1
+	return n
+
 func _refresh_settings() -> void:
 	var on: Callable = func(b: bool) -> String: return "On" if b else "Off"
 	(set_btns["difficulty"] as Button).text = "Difficulty: %s" % g.DIFF_NAMES[int(g.save["difficulty"])]
 	(set_btns["aim_assist"] as Button).text = "Aim assist: %s" % g.AIM_NAMES[int(g.save["aim_assist"])]
 	(set_btns["minimap"] as Button).text = "Mini map: %s" % on.call(bool(g.save["minimap"]))
+	(set_btns["zoom"] as Button).text = "Camera: %s" % g.ZOOM_NAMES[int(g.save["zoom"])]
+	(set_btns["markers"] as Button).text = "Edge markers: %s" % on.call(bool(g.save["markers"]))
+	(set_btns["hints"] as Button).text = "Find hints: %s" % on.call(bool(g.save["hints"]))
+	(set_btns["safe_colors"] as Button).text = "Shot colors: %s" % ("Color-safe" if bool(g.save["safe_colors"]) else "Standard")
+	(set_btns["touch_left"] as Button).text = "Touch layout: %s" % ("Left-handed" if bool(g.save["touch_left"]) else "Right-handed")
+	(set_btns["touch_fixed"] as Button).text = "Stick position: %s" % ("Fixed" if bool(g.save["touch_fixed"]) else "Follows thumb")
 	(set_btns["shake"] as Button).text = "Screen shake: %s" % g.SHAKE_NAMES[int(g.save["shake"])]
 	(set_btns["rumble"] as Button).text = "Rumble: %s" % on.call(bool(g.save["rumble"]))
 	(set_btns["stick_size"] as Button).text = "Touch sticks: %s" % g.STICK_NAMES[int(g.save["stick_size"])]
@@ -479,8 +556,13 @@ func _on_setting(id: String) -> void:
 			g.save["shake"] = (int(g.save["shake"]) + 1) % g.SHAKE_NAMES.size()
 		"stick_size":
 			g.save["stick_size"] = (int(g.save["stick_size"]) + 1) % g.STICK_NAMES.size()
-		"invincible", "sfx", "show_fps", "minimap", "rumble":
+		"invincible", "sfx", "show_fps", "minimap", "rumble", "markers", "hints", "safe_colors", "touch_fixed":
 			g.save[id] = not bool(g.save[id])
+		"zoom":
+			g.save["zoom"] = (int(g.save["zoom"]) + 1) % g.CAM_ZOOMS.size()
+		"touch_left":
+			g.save["touch_left"] = not bool(g.save["touch_left"])
+			_layout()
 		"music":
 			g.save["music"] = not bool(g.save["music"])
 			g.play_music(g.music_now)
@@ -778,15 +860,19 @@ func _input(event: InputEvent) -> void:
 				return
 			if g.has_dash() and st.position.distance_squared_to(dash_c) < 64.0 * 64.0:
 				g.touch_dash = true
-			elif st.position.x < get_viewport_rect().size.x * 0.5:
+			elif (st.position.x < get_viewport_rect().size.x * 0.5) != bool(g.save["touch_left"]):
 				if move_id == -1:
 					move_id = st.index
-					move_o = st.position
+					move_o = _move_home() if bool(g.save["touch_fixed"]) else st.position
 					move_p = st.position
+					if bool(g.save["touch_fixed"]):
+						g.touch_move = ((move_p - move_o) / (64.0 * _stick_k())).limit_length(1.0)
 			elif aim_id == -1:
 				aim_id = st.index
-				aim_o = st.position
+				aim_o = _aim_home() if bool(g.save["touch_fixed"]) else st.position
 				aim_p = st.position
+				if bool(g.save["touch_fixed"]):
+					g.touch_aim = ((aim_p - aim_o) / (50.0 * _stick_k())).limit_length(1.0)
 		else:
 			if st.index == move_id:
 				move_id = -1
@@ -817,6 +903,7 @@ func _text(p: Vector2, s: String, sz: int, col: Color, align: int = HORIZONTAL_A
 func _draw() -> void:
 	var vs: Vector2 = get_viewport_rect().size
 	var ph: int = g.phase
+	marker_count = 0
 	if ph == g.Phase.TITLE:
 		return
 	var o: Vector2 = sm.position + Vector2(18, 16)
@@ -869,6 +956,7 @@ func _draw() -> void:
 			draw_rect(Rect2(bx - 3.0, by - 3.0, bw + 6.0, 22.0), Color(0.05, 0.08, 0.16, 0.9))
 			draw_rect(Rect2(bx, by, bw * clampf(g.boss.hp / g.boss.max_hp, 0.0, 1.0), 16.0), Color("d85fa3"))
 		_draw_touch(vs)
+		_draw_markers(vs)
 	# frame rate readout, off unless switched on in Settings
 	if bool(g.save["show_fps"]) and not menu_open:
 		_text(Vector2(sm.end.x - 262.0, sm.position.y + 46.0), "%d fps" % int(Engine.get_frames_per_second()), 18, Color("9fe8ff"), HORIZONTAL_ALIGNMENT_RIGHT, 112.0)
@@ -904,6 +992,13 @@ func _draw() -> void:
 	elif ph == g.Phase.FADE_IN:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0.03, 0.04, 0.08, 1.0 - clampf(g.phase_t / 0.25, 0.0, 1.0)))
 
+## Where each stick rests. Left-handed swaps the sides (v0.3.4).
+func _move_home() -> Vector2:
+	return Vector2(sm.end.x - 190.0, sm.end.y - 150.0) if bool(g.save["touch_left"]) else Vector2(sm.position.x + 150.0, sm.end.y - 150.0)
+
+func _aim_home() -> Vector2:
+	return Vector2(sm.position.x + 190.0, sm.end.y - 150.0) if bool(g.save["touch_left"]) else Vector2(sm.end.x - 190.0, sm.end.y - 150.0)
+
 func _stick_k() -> float:
 	return g.STICK_K[int(g.save["stick_size"])]
 
@@ -911,8 +1006,8 @@ func _draw_touch(vs: Vector2) -> void:
 	if not g.touch_visible or g.phase != g.Phase.PLAY:
 		return
 	var ring := Color(1, 1, 1, 0.28)
-	var mo: Vector2 = move_o if move_id != -1 else Vector2(sm.position.x + 150.0, sm.end.y - 150.0)
-	var ao: Vector2 = aim_o if aim_id != -1 else Vector2(sm.end.x - 190.0, sm.end.y - 150.0)
+	var mo: Vector2 = move_o if move_id != -1 else _move_home()
+	var ao: Vector2 = aim_o if aim_id != -1 else _aim_home()
 	var sk: float = _stick_k()
 	draw_arc(mo, 64.0 * sk, 0.0, TAU, 32, ring, 4.0)
 	draw_circle(mo + g.touch_move * 64.0 * sk, 28.0 * sk, Color(1, 1, 1, 0.35))
@@ -923,3 +1018,55 @@ func _draw_touch(vs: Vector2) -> void:
 		draw_circle(dash_c, 46.0, Color(0.22, 0.78, 0.91, 0.5 if ready else 0.2))
 		draw_arc(dash_c, 46.0, 0.0, TAU, 32, Color(1, 1, 1, 0.6), 3.0)
 		draw_string(font, dash_c + Vector2(-46, 8), "Dash", HORIZONTAL_ALIGNMENT_CENTER, 92.0, 22, Color.WHITE)
+
+# ------------------------------------------------------------------ edge markers (v0.3.4)
+
+## Arrows at the screen edge for awake enemies off screen (red), Wren's Wagon (orange) and the next goal (gold).
+func _draw_markers(vs: Vector2) -> void:
+	if not bool(g.save["markers"]) or g.phase != g.Phase.PLAY or shop_open:
+		return
+	var c: Vector2 = g.cam.get_screen_center_position()
+	var z: float = g.zoom_now
+	var inset: Rect2 = Rect2(sm.position.x + 34.0, sm.position.y + 84.0, sm.size.x - 68.0, sm.size.y - 118.0)   # clear of the Menu button row
+	var red := Color("ff5d6d") if not bool(g.save["safe_colors"]) else Color("ffb000")
+	for e: Variant in g.enemies:
+		if e.alive and e.awake and not e.dormant and (e.pos as Vector2).distance_squared_to(g.ppos) < 820.0 * 820.0:
+			_marker((e.pos - c) * z + vs * 0.5, inset, red, 0)
+	if g.shop_pos != Vector2.INF and g.shop_pos.distance_squared_to(g.ppos) < 1500.0 * 1500.0:
+		_marker((g.shop_pos - c) * z + vs * 0.5, inset, Color("ff8a5c"), 1)
+	var goal: Vector2 = g.goal_target()
+	if goal != Vector2.INF:
+		_marker((goal - c) * z + vs * 0.5, inset, Color("ffd84a"), 2)
+
+func _marker(sp: Vector2, inset: Rect2, col: Color, kind: int) -> void:
+	if inset.has_point(sp):
+		return
+	var mid: Vector2 = inset.get_center()
+	var d: Vector2 = sp - mid
+	if d.length_squared() < 1.0:
+		return
+	var half: Vector2 = inset.size * 0.5
+	var k: float = minf(half.x / maxf(absf(d.x), 0.001), half.y / maxf(absf(d.y), 0.001))
+	var p: Vector2 = mid + d * k
+	if mini_base.visible:      # never hide under the mini map: slide below it
+		var mr: Rect2 = mini_base.get_global_rect().grow(16.0)
+		if mr.has_point(p):
+			p.y = mr.end.y + 4.0
+	var dir: Vector2 = d.normalized()
+	var side: Vector2 = dir.orthogonal()
+	var dark := Color(0.05, 0.08, 0.16, 0.85)
+	draw_colored_polygon(PackedVector2Array([p + dir * 15.0, p - dir * 7.0 + side * 12.0, p - dir * 7.0 - side * 12.0]), dark)
+	draw_colored_polygon(PackedVector2Array([p + dir * 11.0, p - dir * 4.0 + side * 8.0, p - dir * 4.0 - side * 8.0]), col)
+	var ic: Vector2 = p - dir * 22.0
+	if kind == 1:
+		draw_circle(ic, 9.0, dark)
+		draw_circle(ic, 6.5, col)
+	elif kind == 2:
+		var star := PackedVector2Array()
+		for i: int in 10:
+			star.append(ic + Vector2.from_angle(TAU * float(i) / 10.0 - PI / 2.0) * (10.0 if i % 2 == 0 else 4.5))
+		draw_colored_polygon(star, col)
+		var ring := PackedVector2Array(star)
+		ring.append(star[0])
+		draw_polyline(ring, dark, 2.0)
+	marker_count += 1

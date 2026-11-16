@@ -11,7 +11,7 @@ const WorldView := preload("res://scripts/world_view.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Bot := preload("res://scripts/bot.gd")
 
-const VERSION := "0.3.3"
+const VERSION := "0.3.4"
 const T := 64.0
 const PR := 17.0
 const MAX_BULLETS := 700
@@ -25,7 +25,9 @@ const SPEEDS: Array[int] = [100, 85, 70, 50]
 const AIM_NAMES: Array[String] = ["Off", "Light", "Strong", "Auto fire"]
 const SHAKE_NAMES: Array[String] = ["Off", "Low", "Full"]
 const SHAKE_K: Array[float] = [0.0, 0.4, 1.0]
-const CAM_ZOOM := 1.4                  # the camera sits closer so everything looks bigger (Brian, v0.3.3)
+const CAM_ZOOMS: Array[float] = [1.4, 1.0]   # Settings: Close (Brian, v0.3.3) or Normal (v0.3.4)
+const ZOOM_NAMES: Array[String] = ["Close", "Normal"]
+const HINT_R := 260.0                  # a keepsake closer than this pings when find hints are on (v0.3.4)
 const CAM_ZOOM_BOSS := 1.0             # the boss arena is taller than the close view, so the camera eases back out there
 const STICK_NAMES: Array[String] = ["Small", "Medium", "Large"]
 const STICK_K: Array[float] = [0.8, 1.0, 1.3]
@@ -59,6 +61,7 @@ var save: Dictionary = {
 	"difficulty": 1, "auto_aim": false, "speed_idx": 0, "invincible": false, "music": true, "sfx": true, "show_fps": false,
 	"aim_assist": 1, "minimap": true, "shake": 2, "rumble": true, "stick_size": 1,
 	"coins": 0, "bought": {}, "caches": [],
+	"zoom": 0, "markers": true, "hints": true, "cps": [], "touch_left": false, "touch_fixed": false, "safe_colors": false,
 }
 var store: SaveStore
 var bridge: TestBridge
@@ -110,7 +113,10 @@ var end_t: float = -1.0
 var time: float = 0.0
 var seen_t: float = 0.0
 var shake: float = 0.0
-var zoom_now: float = CAM_ZOOM         # eased camera zoom
+var zoom_now: float = 1.4              # eased camera zoom, set from the save at start
+var hint_cd: float = 0.0               # find hint cooldown
+var hint_t: float = 0.0                # find hint ring, 1 to 0
+var hint_pings: int = 0                # for the browser test
 var cam_look: Vector2 = Vector2.ZERO
 var ship_ang: float = 0.0             # drawn heading, eased toward the aim so turns look smooth  # smoothed camera lead toward aim and travel
 var proc_ms: float = 0.0
@@ -180,7 +186,7 @@ func _ready() -> void:
 	store.limits = {"xp": [0, 100000], "level": [1, 99], "points": [0, 99], "st_damage": [0, STAT_MAX], "st_rate": [0, STAT_MAX],
 		"st_speed": [0, STAT_MAX], "st_range": [0, STAT_MAX], "defeats": [0, 1000000], "kills": [0, 10000000],
 		"play_s": [0.0, 1.0e9], "boss_s": [0.0, 1.0e7], "difficulty": [0, 2], "speed_idx": [0, SPEEDS.size() - 1],
-		"aim_assist": [0, 3], "shake": [0, 2], "stick_size": [0, 2], "coins": [0, 999999]}
+		"aim_assist": [0, 3], "shake": [0, 2], "stick_size": [0, 2], "coins": [0, 999999], "zoom": [0, 1]}
 	var args: PackedStringArray = OS.get_cmdline_user_args()
 	bot_mode = args.has("--bot") or args.has("--reach")
 	if bot_mode:
@@ -190,8 +196,9 @@ func _ready() -> void:
 	bridge = TestBridge.new("tinytailwind")
 	touch_visible = DisplayServer.is_touchscreen_available() and (OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios"))
 
+	zoom_now = CAM_ZOOMS[int(save["zoom"])]
 	cam = Camera2D.new()
-	cam.zoom = Vector2(CAM_ZOOM, CAM_ZOOM)
+	cam.zoom = Vector2(zoom_now, zoom_now)
 	add_child(cam)
 	cam.make_current()
 	view = WorldView.new()
@@ -264,6 +271,14 @@ func _clean_save() -> void:
 	save["flags"] = flags
 	if not cp_pos.has(str(save["cp"])):
 		save["cp"] = "m_glade"
+	# reached checkpoints for fast travel (v0.3.4). Older saves start with the last checkpoint
+	var cps: Array = []
+	for c: Variant in (save["cps"] as Array):
+		if c is String and cp_pos.has(c) and not cps.has(c):
+			cps.append(c)
+	if not cps.has(str(save["cp"])):
+		cps.append(str(save["cp"]))
+	save["cps"] = cps
 	if bool(save["auto_aim"]):
 		save["auto_aim"] = false          # v0.1 on/off auto aim becomes the Auto fire level. The old key stays (G5.6)
 		save["aim_assist"] = 3
@@ -353,7 +368,7 @@ func _make_audio() -> void:
 		sfx_players.append(p)
 	if bot_mode:
 		return
-	for n: String in ["shoot", "hit", "pop", "hurt", "crystal", "find", "dash", "checkpoint", "levelup", "gate", "boss", "click", "defeat", "coin", "buy", "break", "leaf"]:
+	for n: String in ["shoot", "hit", "pop", "hurt", "crystal", "find", "dash", "checkpoint", "levelup", "gate", "boss", "click", "defeat", "coin", "buy", "break", "leaf", "hint"]:
 		sounds[n] = load("res://audio/%s.wav" % n)
 
 func sfx(n: String, vol_db: float = -6.0) -> void:
@@ -695,6 +710,56 @@ func _mark_seen() -> void:
 			if x >= 0 and y >= 0 and x < cw and y < ch:
 				seen_now[y * cw + x] = true
 
+## Fast travel (v0.3.4): only in play, outside fights.
+func can_travel() -> bool:
+	return phase == Phase.PLAY and active_arena == ""
+
+func cp_name(id: String) -> String:
+	var mid: String = str((cp_pos[id] as Array)[0])
+	for c: Variant in ((world["maps"] as Dictionary)[mid]["checkpoints"] as Array):
+		if str((c as Dictionary)["id"]) == id:
+			return str((c as Dictionary).get("name", id))
+	return id
+
+func travel_to(id: String) -> void:
+	if not cp_pos.has(id) or not (save["cps"] as Array).has(id) or not can_travel():
+		return
+	save["cp"] = id
+	var cp: Array = cp_pos[id]
+	go_map(str(cp[0]), cp[1])
+	say("Fast travel: %s." % cp_name(id))
+
+## Where the gold edge marker points (v0.3.4): the Dash Core, then the warden, then the nearest keepsake not found yet.
+func goal_target() -> Vector2:
+	var want: String = ""
+	if not has_dash():
+		want = "cave"
+	elif not has_flag("d_boss"):
+		want = "dungeon"
+	if want != "" and want != map_id:
+		var back: Vector2 = Vector2.INF
+		for d: Dictionary in doors:
+			if str(d["to"]) == want:
+				return d["pos"]
+			if str(d["to"]) == "meadow":
+				back = d["pos"]
+		if back != Vector2.INF:
+			return back
+	elif want == "cave":
+		for f: Dictionary in open_finds:
+			if str(f["id"]) == "c_dash":
+				return f["pos"]
+	elif want == "dungeon" and boss != null and boss.alive:
+		return boss.pos
+	var best: Vector2 = Vector2.INF
+	var bd: float = INF
+	for f: Dictionary in open_finds:
+		var dd: float = (f["pos"] as Vector2).distance_squared_to(ppos)
+		if dd < bd:
+			bd = dd
+			best = f["pos"]
+	return best
+
 ## The part of the world the camera shows, in world pixels.
 func view_size() -> Vector2:
 	return get_viewport_rect().size / zoom_now
@@ -844,7 +909,7 @@ func _process(delta: float) -> void:
 	var lead: Vector2 = (aim_dir * 48.0 if firing else Vector2.ZERO) + pvel * 0.1
 	cam_look = cam_look.lerp(lead, 1.0 - exp(-delta * 3.0))
 	ship_ang = lerp_angle(ship_ang, aim_dir.angle(), 1.0 - exp(-delta * 22.0))
-	var zoom_want: float = CAM_ZOOM_BOSS if boss != null and active_arena != "" and active_arena == boss.group else CAM_ZOOM
+	var zoom_want: float = CAM_ZOOM_BOSS if boss != null and active_arena != "" and active_arena == boss.group else CAM_ZOOMS[int(save["zoom"])]
 	zoom_now = lerpf(zoom_now, zoom_want, 1.0 - exp(-delta * 3.0))
 	cam.zoom = Vector2(zoom_now, zoom_now)
 	cam.position = cam.position.lerp(_cam_target(), 1.0 - exp(-delta * 10.0))
@@ -1440,9 +1505,19 @@ func _boss_step(e: Enemy, dt: float, dn: Vector2, bs_k: float, rate_k: float) ->
 
 func _step_triggers(dt: float) -> void:
 	seen_t -= dt
+	hint_cd = maxf(0.0, hint_cd - dt)
+	hint_t = maxf(0.0, hint_t - dt)
 	if seen_t <= 0.0:
 		seen_t = 0.3
 		_mark_seen()
+		if bool(save["hints"]) and hint_cd <= 0.0:
+			for f: Dictionary in open_finds:
+				if (f["pos"] as Vector2).distance_squared_to(ppos) < HINT_R * HINT_R:
+					hint_cd = 7.0
+					hint_t = 1.0
+					hint_pings += 1
+					sfx("hint", -12.0)
+					break
 	for i: int in range(open_finds.size() - 1, -1, -1):
 		var f: Dictionary = open_finds[i]
 		var fp: Vector2 = f["pos"]
@@ -1475,6 +1550,8 @@ func _step_triggers(dt: float) -> void:
 		if cp.distance_squared_to(ppos) < 60.0 * 60.0:
 			if str(save["cp"]) != str(c["id"]):
 				save["cp"] = str(c["id"])
+				if not (save["cps"] as Array).has(str(c["id"])):
+					(save["cps"] as Array).append(str(c["id"]))
 				say("Checkpoint. Progress saved.")
 				sfx("checkpoint")
 				hp = max_hp()
@@ -1549,7 +1626,10 @@ func _test_state() -> Dictionary:
 		"finds": (save["finds"] as Array).size(), "level": int(save["level"]), "xp": int(save["xp"]), "points": int(save["points"]),
 		"alive": alive, "awake": awake, "shots": b_live, "menu": hud.menu_open, "tab": hud.tab, "touch": touch_visible,
 		"dash": has_dash(), "flags": save["flags"], "cp": str(save["cp"]), "arena": active_arena, "kills": int(save["kills"]),
-		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "coins": int(save["coins"]), "coins_earned": coins_earned, "caches": (save["caches"] as Array).size(), "bought": save["bought"], "shop": hud.shop_open, "props": props.size(), "shield": shield_ready, "open_caches": open_caches.size(), "aim_assist": int(save["aim_assist"]), "mini": hud.mini_shown(), "rumbles": rumble_count, "shot_r": shot_size(), "minimap": bool(save["minimap"]), "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION}
+		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "coins": int(save["coins"]), "coins_earned": coins_earned, "caches": (save["caches"] as Array).size(), "bought": save["bought"], "shop": hud.shop_open, "props": props.size(), "shield": shield_ready, "open_caches": open_caches.size(), "aim_assist": int(save["aim_assist"]), "mini": hud.mini_shown(), "rumbles": rumble_count, "shot_r": shot_size(), "minimap": bool(save["minimap"]), "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION,
+		"zoom": snappedf(zoom_now, 0.01), "zoom_set": int(save["zoom"]), "cps": save["cps"], "hint_pings": hint_pings, "markers": hud.marker_count,
+		"travel_btns": hud.travel_count(), "touch_left": bool(save["touch_left"]), "touch_fixed": bool(save["touch_fixed"]), "safe_colors": bool(save["safe_colors"]),
+		"move_o_x": snappedf(hud.move_o.x, 0.1), "touch_move_x": snappedf(touch_move.x, 0.01)}
 
 func _test_cmd(cmd: String) -> void:
 	var maps: Dictionary = world["maps"]
@@ -1608,6 +1688,14 @@ func _test_cmd(cmd: String) -> void:
 				open_shop()
 		"focus_out":
 			_notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+		"warp_find":
+			go_map("meadow", tile_center(5, 6))       # two tiles below the keepsake m1
+		"all_cps":
+			for id: Variant in cp_pos.keys():
+				if not (save["cps"] as Array).has(str(id)):
+					(save["cps"] as Array).append(str(id))
 		_:
 			if cmd.begins_with("set_"):
 				hud._on_setting(cmd.substr(4))
+			elif cmd.begins_with("travel_"):
+				travel_to(cmd.substr(7))

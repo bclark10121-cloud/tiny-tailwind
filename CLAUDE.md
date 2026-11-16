@@ -27,14 +27,16 @@ This game has combat, enemies and bosses. Override rows 1 and 2 in `STANDARDS_OV
 - 2026-11-15: the ship is a 3D model (Gemini, then Meshy) rendered into sprites for the 2D game. Shipped on its own as v0.3.1. Spec sheets for enemies, bosses, new ships and add-ons are backlog item 37.
 - 2026-11-15: the Swallow glider did not look good in game. Brian picked the Manta from four top-down concepts tested at game size, and the Meshy render over the flat drawing. Shipped as v0.3.2 at 60 px across. Design new art from straight above first and test it at game size before modeling.
 - 2026-11-15: a closer camera so everything is bigger, and less thrust from the back of the ship. Shipped as v0.3.3.
+- 2026-11-15: six QoL items shipped as v0.3.4. Standard Settings and save slots wait for the standards catch-up release.
 
 ## Rules
 
 - The world is a tile grid, 64 px a tile. `tools/make_world.py` writes `data/world.json`. Tiles: `#` wall, `.` floor, `~` water, `^` rift. Only a dash crosses a rift.
 - Enemies live in `data/enemies.json`, finds in `data/finds.json`, breakables in `data/props.json` and shop items in `data/shop.json`. Coin caches, breakables and Wren's Wagon are placed in `tools/make_world.py`. New enemies, finds, rooms, caches and shop items need no new code (G4.9).
 - Movement, shots and hits are plain maths in `scripts/main.gd`. No physics bodies (override 6).
-- The camera zooms in 1.4x (`CAM_ZOOM`) and eases back to 1.0 in the boss arena (`CAM_ZOOM_BOSS`), which is taller than the close view. Anything that needs the visible world area uses `view_size()` and `on_screen()`, never the raw viewport size (v0.3.3).
+- The camera zooms in 1.4x by default (`CAM_ZOOMS`: Close 1.4, Normal 1.0, set in Settings) and eases back to 1.0 in the boss arena (`CAM_ZOOM_BOSS`), which is taller than the close view. Anything that needs the visible world area uses `view_size()` and `on_screen()`, never the raw viewport size (v0.3.3).
 - Regular enemies never fire from off screen (v0.3.3, pillar 3).
+- Player options added in v0.3.4 are save fields with safe defaults: `zoom`, `markers`, `hints`, `cps` (reached checkpoints for fast travel), `touch_left`, `touch_fixed` and `safe_colors`. Fast travel only works outside fights (`can_travel()`). Checkpoint names live in `tools/make_world.py`.
 - Shots, sparks and pickups live in pools made once. Never create or free nodes during play (E4.5).
 - All art is drawn in code in `scripts/world_view.gd` and `scripts/hud.gd`. No textures, with one exception: the ship. Its five sprites in `art/ship/` are rendered from the Meshy model `art_source/manta.glb` with `python3 -I tools/render_ship_sprites.py art_source/manta.glb <out> --nose +y --up +z` (Brian, 2026-11-15). Godot skips `art_source/`, so the model stays out of the builds. Any other texture needs Brian's OK. Use only letters, digits and plain punctuation in on-screen text: the built-in font has no star or box symbols.
 - Save file is `user://tiny_tailwind.json`, format `v: 1`, written with `addons/bc_common/save_store.gd`. Only add fields, each with a safe default. Find ids, checkpoint ids and arena ids from a save are checked against the data files (E6.7).
