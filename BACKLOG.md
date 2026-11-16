@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-16 for v0.3.8. BC decides the order.
+Updated 2026-11-16 for v0.3.9. BC decides the order.
 
 ## Graphics plan (BC, 2026-11-15)
 
@@ -36,10 +36,11 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 - v0.3.6 (2026-11-16), sound fix (BC 2026-11-16: no music in the browser). The Music and Sfx buses come from `default_bus_layout.tres` instead of `AudioServer.add_bus()` at runtime, which left every sound silent in the browser build. New `tests/audio_test.py` measures the page's real sound output. Version code 12.
 - v0.3.7 (2026-11-16), laser shot sound (BC 2026-11-16: the shots should sound like a sci-fi laser, not a bullet). BC picked Classic Pew from six laser options. `tools/make_sfx.py` draws it. Each shot gets a small random pitch change. Version code 13.
 - v0.3.8 (2026-11-16), the graphics release (BC 2026-11-16: "yes" to moving the two staged graphics branches onto `game-studio` and shipping them). Graphics Phase 1 and Phase 2 from the plan above: glow, bloom, a color grade per area, a vignette, soft shadows, hit stop, a zoom punch on the warden, enemy wind-up rings and aim lines, kill rings, glowing sparks, a dash trail, damage-lag bars, pickup numbers, panels that ease in and the Nunito and Fredoka fonts. A new setting, Glow and color. Gameplay did not change. Version code 14.
+- v0.3.9 (2026-11-16), louder pew (BC 2026-11-16: the pew was hard to hear under the music). BC picked a louder pew and quieter music overall. The shot sound is 8 dB louder (-17 to -9 dB) and the music 4 dB quieter at every Music level (-11 to -15 dB). The pew now sits about level with the meadow and cave music, where it was about 10 dB under it. Version code 15.
 
 ## Now
 
-- BC tries v0.3.8 on a real phone, a Retroid and an Xbox controller, with an eye on the frame rate with the glow on.
+- BC tries v0.3.9 on a real phone, a Retroid and an Xbox controller: the frame rate with the glow on and whether the pew is easy to hear.
 - Then Release 3, weapons (v0.4.0), unless BC picks something else.
 - Graphics Phase 3 and 4 wait for BC to pick them.
 
@@ -151,8 +152,16 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 - 2026-11-15: a closer camera and less thrust from the back of the ship. Shipped in v0.3.3.
 - 2026-11-16: the catch-up builds on v0.3.4 main. The graphics branches merge in later.
 - 2026-11-16: the ship's shots sound like a sci-fi laser. BC picked option 1, Classic Pew, and a full release now (v0.3.7) instead of waiting for the graphics release.
+- 2026-11-16: the pew was hard to hear, maybe under the music. BC picked "Louder pew" and "Quieter music overall" (not a pew on every shot, not a separate Shots volume). Shipped in v0.3.9.
 - 2026-11-16: "yes" to moving graphics Phase 1 and Phase 2 onto `game-studio` and shipping them as the next release. Shipped in v0.3.8.
 - 2026-11-15: all seven suggested QoL items in the next release unless they need splitting. Six shipped in v0.3.4. Standard Settings and save slots go with the standards catch-up release, since they come from kit 1.8.0.
+
+## Judgment calls made in v0.3.9 (BC to confirm or change)
+
+1. A patch number (v0.3.9) for the two level changes only. Nothing else rides along.
+2. 8 dB louder for the pew and 4 dB quieter for the music, so the pew sits about level with the meadow and cave music. The boss music is louder than the others, so the pew still plays about 3 dB under it in the warden fight.
+3. The music change applies at every Music level, for every player. Settings files keep the level each player picked.
+4. The Game Shelf picture stays as it is: nothing on screen changed.
 
 ## Judgment calls made in v0.3.8 (BC to confirm or change)
 
