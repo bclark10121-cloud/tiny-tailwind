@@ -1320,12 +1320,15 @@ func _step_pickups(dt: float) -> void:
 			k_kind[i] = 0
 			if kind == 1:
 				gain_xp(1)
+				view.pop(ppos, "+1", Color("7df0c0"))
 			elif kind == 3:
 				add_coins(1)
 				sfx("coin", -16.0)
+				view.pop(ppos, "+1", Color("ffd84a"))
 			else:
 				hp = mini(max_hp(), hp + 2)
 				sfx("checkpoint", -12.0)
+				view.pop(ppos, "+2", Color("ff7d98"))
 		elif k_age[i] > 40.0:
 			k_kind[i] = 0
 
@@ -1366,6 +1369,7 @@ func damage_enemy(e: Enemy, dmg: float, at: Vector2) -> void:
 	sfx("pop", -8.0)
 	shake = maxf(shake, 3.0)
 	hitstop(0.04)
+	view.ring(e.pos, e.r + 8.0, e.color.lightened(0.4))
 	for i: int in int(10.0 + e.r * 0.4):
 		spark(e.pos, Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(60.0, 260.0), 0.5, 6.0, e.color.lightened(rng.randf() * 0.4))
 	for i: int in e.xp:
@@ -1402,6 +1406,8 @@ func _boss_down() -> void:
 	shake = 16.0
 	hitstop(0.16)
 	zoom_kick = 0.06
+	if boss != null:
+		view.ring(boss.pos, boss.r + 30.0, Color(1.0, 0.75, 0.9))
 	sfx("boss")
 	rumble(0.6, 1.0, 0.5)
 	if float(save["boss_s"]) <= 0.0 or boss_t < float(save["boss_s"]):
@@ -1687,7 +1693,7 @@ func _test_state() -> Dictionary:
 		"alive": alive, "awake": awake, "shots": b_live, "menu": hud.menu_open, "tab": hud.tab, "touch": touch_visible,
 		"dash": has_dash(), "flags": save["flags"], "cp": str(save["cp"]), "arena": active_arena, "kills": int(save["kills"]),
 		"defeats": int(save["defeats"]), "difficulty": int(save["difficulty"]), "focus": hud.focus_text(), "dash_cd": dash_cd, "dashes": dash_count, "coins": int(save["coins"]), "coins_earned": coins_earned, "caches": (save["caches"] as Array).size(), "bought": save["bought"], "shop": hud.shop_open, "props": props.size(), "shield": shield_ready, "open_caches": open_caches.size(), "aim_assist": int(save["aim_assist"]), "mini": hud.mini_shown(), "rumbles": rumble_count, "shot_r": shot_size(), "minimap": bool(save["minimap"]), "fps": Engine.get_frames_per_second(), "proc_ms": snappedf(proc_ms, 0.01), "draw_ms": snappedf(view.draw_ms, 0.01), "speed": snappedf(pvel.length(), 0.1), "pads": Input.get_connected_joypads().size(), "pad_line": hud.pad_text(), "boss_hp": boss.hp if boss != null else -1.0, "version": VERSION,
-		"zoom": snappedf(zoom_now, 0.01), "glow": bool(save.get("glow", true)), "env_glow": env != null and env.glow_enabled, "vignette": vignette != null and vignette.visible, "stop_t": stop_t, "zoom_kick": zoom_kick, "font": hud.theme.default_font.resource_path if hud.theme.default_font != null else "", "zoom_set": int(save["zoom"]), "cps": save["cps"], "hint_pings": hint_pings, "markers": hud.marker_count,
+		"zoom": snappedf(zoom_now, 0.01), "glow": bool(save.get("glow", true)), "fx_rings": view.rings.size(), "fx_pops": view.pops.size(), "fx_ghosts": view.ghosts.size(), "boss_lag": snappedf(view.boss_lag, 0.01), "env_glow": env != null and env.glow_enabled, "vignette": vignette != null and vignette.visible, "stop_t": stop_t, "zoom_kick": zoom_kick, "font": hud.theme.default_font.resource_path if hud.theme.default_font != null else "", "zoom_set": int(save["zoom"]), "cps": save["cps"], "hint_pings": hint_pings, "markers": hud.marker_count,
 		"travel_btns": hud.travel_count(), "touch_left": bool(save["touch_left"]), "touch_fixed": bool(save["touch_fixed"]), "safe_colors": bool(save["safe_colors"]),
 		"move_o_x": snappedf(hud.move_o.x, 0.1), "touch_move_x": snappedf(touch_move.x, 0.01)}
 

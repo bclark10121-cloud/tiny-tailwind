@@ -63,7 +63,8 @@ async def main():
             s = await r.state(); p0, c0 = s["props"], s["coins"]
             await pg.keyboard.down("ArrowRight"); s = await r.wait_for(lambda s: s["props"] < p0, 15, "the bush breaks"); await pg.keyboard.up("ArrowRight")
             r.check(s["props"] == p0 - 1, "shooting a bush breaks it (%d to %d props)" % (p0, s["props"]))
-            s = await r.wait_for(lambda s: s["coins"] > c0, 10, "bush coins picked up"); await r.shot("04c_bush_coins")
+            s = await r.wait_for(lambda s: s["coins"] > c0 and s.get("fx_pops", 0) > 0, 10, "bush coins picked up"); await r.shot("04c_bush_coins")
+            r.check(s.get("fx_pops", 0) > 0, "a +1 rises from the ship as each coin is picked up (v0.4 graphics)")
             r.check(s["coins"] > c0, "the bush drops coins that fly to the ship (%d to %d)" % (c0, s["coins"]))
             # a coin cache
             await r.cmd("warp_cache"); await r.wait_for(lambda s: s["phase"] == PLAY and abs(s["y"] - 1312) < 40, 30, "above the cache")
@@ -110,7 +111,7 @@ async def main():
             # cave and the dash
             await r.cmd("heal"); await r.cmd("warp_core"); await r.wait_for(lambda s: s["map"] == "cave" and s["phase"] == PLAY, 30, "cave loads"); await pg.wait_for_timeout(1500); await r.shot("09_cave")
             await r.cmd("give_dash"); await pg.wait_for_timeout(900); s = await r.state(); r.check(s["dash"], "the Dash Core gives the dash"); await r.shot("10_dash_found")
-            x0 = s["x"]; await pg.keyboard.down("d"); await r.key("Space", 500); await pg.keyboard.up("d"); s = await r.state(); r.notes.append("dash moved x %.0f to %.0f" % (x0, s["x"]))
+            x0 = s["x"]; await pg.keyboard.down("d"); await r.key("Space", 120); s = await r.state(); r.check(s.get("fx_ghosts", 0) > 0, "the dash leaves a glowing trail (v0.4 graphics)"); await pg.wait_for_timeout(380); await pg.keyboard.up("d"); s = await r.state(); r.notes.append("dash moved x %.0f to %.0f" % (x0, s["x"]))
             # defeat costs nothing
             f0, l0 = s["finds"], s["level"]
             await r.cmd("defeat"); await r.wait_phase([DEFEAT], 10); await pg.wait_for_timeout(900); await r.shot("11_defeat")

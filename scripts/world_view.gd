@@ -58,6 +58,8 @@ func _ready() -> void:
 	map_changed()
 
 func redraw() -> void:
+	if g != null and g.mw != 0:
+		_age_fx()
 	queue_redraw()
 	under.queue_redraw()
 	glow.queue_redraw()
@@ -99,6 +101,64 @@ class Glow extends Node2D:
 	func _draw() -> void:
 		v.call("_glow", self)
 
+# ---------- Phase 2: telegraphs, kill rings, dash ghosts, damage lag, pop-up numbers ----------
+const WINDUP_S := 0.45   # the gold ring closes in over the last part of an enemy's reload
+const RING_S := 0.35
+const GHOST_S := 0.22
+const POP_S := 0.8
+var rings: Array[Dictionary] = []    # {p, r, col, t}
+var ghosts: Array[Dictionary] = []   # {p, t}
+var pops: Array[Dictionary] = []     # {p, text, col, t}
+var lag: Dictionary = {}             # enemy instance id -> health shown by the pale bar, 0 to 1
+var boss_lag: float = 1.0
+var _ghost_last: float = -1.0
+
+func _windup(e: Enemy, p: Vector2, look: Vector2) -> void:
+	if e.fire == "none" or not e.awake or e.fire_t > WINDUP_S or e.fire_t <= 0.0:
+		return
+	var w: float = 1.0 - e.fire_t / WINDUP_S
+	draw_arc(p, e.r + 4.0 + 10.0 * (1.0 - w), 0.0, TAU, 28, Color(1.0, 0.86, 0.35, 0.85 * w), 2.5)
+	if e.fire == "aimed":
+		draw_line(p + look * (e.r + 4.0), p + look * minf(220.0, p.distance_to(g.ppos)), Color(1.0, 0.45, 0.7, 0.32 * w), 2.0)
+
+func ring(p: Vector2, r: float, col: Color) -> void:
+	rings.append({"p": p, "r": r, "col": col, "t": g.time})
+
+func pop(p: Vector2, text: String, col: Color) -> void:
+	if pops.size() < 24:
+		pops.append({"p": p, "text": text, "col": col, "t": g.time})
+
+## Runs once a frame from redraw(): ages the effects and eases the pale damage bars down.
+func _age_fx() -> void:
+	var now: float = g.time
+	rings = rings.filter(func(x: Dictionary) -> bool: return now - float(x.t) < RING_S)
+	pops = pops.filter(func(x: Dictionary) -> bool: return now - float(x.t) < POP_S)
+	ghosts = ghosts.filter(func(x: Dictionary) -> bool: return now - float(x.t) < GHOST_S)
+	if g.dash_t > 0.0 and now - _ghost_last > 0.03:
+		ghosts.append({"p": g.ppos, "t": now})
+		_ghost_last = now
+	var keep := {}
+	for e: Enemy in g.enemies:
+		if e.alive and e.bar_t > 0.0:
+			var id: int = e.get_instance_id()
+			var f: float = clampf(e.hp / e.max_hp, 0.0, 1.0)
+			keep[id] = maxf(f, float(lag.get(id, 1.0)) - 0.012)
+	lag = keep
+	if g.boss != null:
+		boss_lag = maxf(clampf(g.boss.hp / g.boss.max_hp, 0.0, 1.0), boss_lag - 0.006)
+
+func _draw_fx() -> void:
+	var now: float = g.time
+	for x: Dictionary in rings:
+		var k: float = (now - float(x.t)) / RING_S
+		draw_arc(x.p, float(x.r) * (0.6 + 1.4 * k), 0.0, TAU, 36, Color(x.col, 0.9 * (1.0 - k)), 4.0 * (1.0 - k) + 1.0)
+	for x: Dictionary in pops:
+		var k2: float = (now - float(x.t)) / POP_S
+		var c: Color = x.col
+		c.a = 1.0 - k2 * k2
+		draw_string_outline(font, x.p + Vector2(-20, -24.0 - 30.0 * k2), x.text, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, 6, Color(0.07, 0.09, 0.2, c.a))
+		draw_string(font, x.p + Vector2(-20, -24.0 - 30.0 * k2), x.text, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, c)
+
 func _halo(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
 	ci.draw_texture_rect(halo_tex, Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0), false, col)
 
@@ -125,6 +185,16 @@ func _glow(ci: CanvasItem) -> void:
 		var col: Color = Color(1.0, 0.75, 0.2) if kk == 3 else (Color(0.4, 1.0, 0.75) if kk == 1 else Color(1.0, 0.35, 0.5))
 		col.a = 0.32 * pulse
 		_halo(ci, g.k_pos[i], 24.0, col)
+	# sparks glow a little, kill rings and dash ghosts glow more
+	for i: int in g.MAX_PARTS:
+		var life: float = g.p_life[i]
+		if life > 0.0 and g.p_size[i] >= 3.0:
+			var pc: Color = g.p_col[i]
+			pc.a = 0.35 * life / g.p_max[i]
+			_halo(ci, g.p_pos[i], g.p_size[i] * 2.6, pc)
+	for gh: Dictionary in ghosts:
+		var ga: float = clampf(1.0 - (g.time - float(gh.t)) / GHOST_S, 0.0, 1.0)
+		_halo(ci, gh.p, 22.0, Color(0.35, 0.85, 1.0, 0.42 * ga))
 	if g.phase != g.Phase.DEFEAT:
 		var back: Vector2 = g.ppos - Vector2.from_angle(g.ship_ang) * 20.0
 		_halo(ci, back, 26.0 + 6.0 * minf(1.0, g.pvel.length() / 400.0), Color(0.3, 0.85, 1.0, 0.30))
@@ -427,6 +497,7 @@ func _draw() -> void:
 			var pc: Color = g.p_col[i]
 			pc.a *= a
 			draw_circle(g.p_pos[i], g.p_size[i] * (0.4 + 0.6 * a), pc)
+	_draw_fx()
 	_time(t0)
 
 func _time(t0: int) -> void:
@@ -451,7 +522,10 @@ func _bar(e: Enemy) -> void:
 	var a: float = minf(1.0, e.bar_t)
 	var o := Vector2(e.pos.x - w * 0.5, e.pos.y - e.r - 16.0)
 	draw_rect(Rect2(o - Vector2(2, 2), Vector2(w + 4.0, 9.0)), Color(0.05, 0.08, 0.16, 0.85 * a))
-	draw_rect(Rect2(o, Vector2(w * clampf(e.hp / e.max_hp, 0.0, 1.0), 5.0)), Color(1.0, 0.42, 0.42, a))
+	var f: float = clampf(e.hp / e.max_hp, 0.0, 1.0)
+	var lg: float = maxf(f, float(lag.get(e.get_instance_id(), 1.0)))
+	draw_rect(Rect2(o, Vector2(w * lg, 5.0)), Color(1.0, 0.92, 0.8, 0.85 * a))   # the pale part shows what the last hit took
+	draw_rect(Rect2(o, Vector2(w * f, 5.0)), Color(1.0, 0.42, 0.42, a))
 
 func _prop(ci: CanvasItem, c: Vector2, pr: Dictionary, t: float) -> void:
 	var kind: String = str(pr["k"])
@@ -525,6 +599,7 @@ func _enemy(e: Enemy, t: float) -> void:
 	var col: Color = Color.WHITE if e.flash > 0.0 else e.color
 	var dark: Color = e.color.darkened(0.5)
 	_soft(self, p + Vector2(0, e.r * 0.7), e.r * 0.95, 0.32)
+	_windup(e, p, look)
 	match e.kind:
 		"drifter":
 			var wob: float = sin(t * 4.0 + e.seed) * 2.0

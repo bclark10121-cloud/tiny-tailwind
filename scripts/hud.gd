@@ -424,9 +424,19 @@ func toggle_menu() -> void:
 		menu_btn.text = "Close"
 		row.visible = true
 		panel.visible = true
+		_slide_in(panel)
 		open_tab(tab)
 		(row_btns[tab] as Button).grab_focus.call_deferred()
 		_release_touch()
+
+## Panels ease in: a quick fade and a small grow from the middle (v0.4 graphics, Phase 2). Runs while the game is paused.
+func _slide_in(c: Control) -> void:
+	c.pivot_offset = c.size * 0.5
+	c.modulate.a = 0.0
+	c.scale = Vector2(0.96, 0.96)
+	var tw := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).set_parallel(true)
+	tw.tween_property(c, "modulate:a", 1.0, 0.16)
+	tw.tween_property(c, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _close_menu() -> void:
 	if menu_open:
@@ -716,6 +726,7 @@ func open_shop() -> void:
 	g.set_paused(true)          # after closing the Menu, which un-pauses
 	shop_open = true
 	shop_panel.visible = true
+	_slide_in(shop_panel)
 	menu_btn.visible = false
 	shop_info.text = "Welcome! Coins come from enemies, bushes, pots, crystals, trees and hidden caches. B or Esc closes."
 	_refresh_shop()
@@ -962,6 +973,7 @@ func _draw() -> void:
 			var by: float = sm.end.y - 46.0
 			_text(Vector2(bx, by - 8.0), "Thornhull", 20, Color("ffb0dc"), HORIZONTAL_ALIGNMENT_CENTER, bw)
 			draw_rect(Rect2(bx - 3.0, by - 3.0, bw + 6.0, 22.0), Color(0.05, 0.08, 0.16, 0.9))
+			draw_rect(Rect2(bx, by, bw * g.view.boss_lag, 16.0), Color(1.0, 0.9, 0.95, 0.8))   # the pale part shows what the last hits took
 			draw_rect(Rect2(bx, by, bw * clampf(g.boss.hp / g.boss.max_hp, 0.0, 1.0), 16.0), Color("d85fa3"))
 		_draw_touch(vs)
 		_draw_markers(vs)
