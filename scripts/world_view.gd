@@ -513,7 +513,7 @@ func _enemy(e: Enemy, t: float) -> void:
 				draw_circle(p + look * 8.0 + Vector2(-3, -3), 3.5, Color.WHITE)
 
 ## The Manta (v0.3.2, replacing the Swallow glider of v0.3.1): five top-down sprites rendered from the Meshy 3D model
-## art_source/manta.glb (tools/render_ship_sprites.py). The one exception to drawn-in-code art (Brian, 2026-11-15).
+## art_source/manta.glb (tools/render_ship_sprites.py). The one exception to drawn-in-code art (BC, 2026-11-15).
 ## Each sprite faces right (angle 0) and is turned to the ship's eased heading. The ship banks into turns and sideways
 ## moves. Shadow, flame, flashes, dash and shield stay in code.
 const SHIP_FRAMES: Array[Texture2D] = [preload("res://art/ship/ship_bank_m30.png"), preload("res://art/ship/ship_bank_m15.png"),

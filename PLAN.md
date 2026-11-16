@@ -21,8 +21,8 @@ Leave (content): every picture, sound, map, name, character and number in the re
 ## 3. Name check
 
 - Web searches on 2026-11-15 found no game called Tiny Tailwind.
-- Near names: Tailwind: Prologue, a space shooter by another studio, and several small games with Tiny in the title. Brian's own Tiny Titans Football also starts with Tiny.
-- Brian chose Tiny Tailwind on 2026-11-15 after seeing these notes. The working title before that was a different name.
+- Near names: Tailwind: Prologue, a space shooter by another studio, and several small games with Tiny in the title. BC's own Tiny Titans Football also starts with Tiny.
+- BC chose Tiny Tailwind on 2026-11-15 after seeing these notes. The working title before that was a different name.
 - Limits: a web search only. Trademark records and the Play Store were not searched.
 
 ## 4. First beta (v0.1.0)

@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.3.4. Brian decides the order.
+Updated 2026-11-15 for v0.3.4. BC decides the order.
 
 ## Done
 
@@ -14,22 +14,22 @@ Updated 2026-11-15 for v0.3.4. Brian decides the order.
   - Assists: 3 difficulty levels, auto aim, game speed and invincible.
   - Map page, Menu row, title card, end card and a save on the device.
 
-- v0.1.1 (2026-11-15). Brian could not fly the ship with the controller in a browser on his ROG handheld. The D-pad now flies the ship. The title card and Settings name the controller the game sees. The game page has handheld steps. Cause found by Brian: the handheld was in PC mode. Gamepad mode fixed it.
-- v0.1.2 (2026-11-15). Brian found movement very choppy. The map is now drawn once, so the game's own work per frame dropped from about 20 ms to under 2 ms in a slow test browser. The ship eases into moves, slides around wall corners and the camera eases. A Frame rate setting shows the frames a second.
-- v0.2.0 (2026-11-15), the Feel release. Brian found v0.1.2 much smoother and asked for bigger shots, then for best judgment on quality of life. Bigger shots, aim assist levels, a corner mini map, enemy health bars, a low health warning, auto pause, screen shake, rumble and touch stick settings.
-- v0.2.1 (2026-11-15). Brian asked for a different default ship shape and picked the Swallow glider from four options. The ship turns smoothly toward the aim. New app icon.
+- v0.1.1 (2026-11-15). BC could not fly the ship with the controller in a browser on his ROG handheld. The D-pad now flies the ship. The title card and Settings name the controller the game sees. The game page has handheld steps. Cause found by BC: the handheld was in PC mode. Gamepad mode fixed it.
+- v0.1.2 (2026-11-15). BC found movement very choppy. The map is now drawn once, so the game's own work per frame dropped from about 20 ms to under 2 ms in a slow test browser. The ship eases into moves, slides around wall corners and the camera eases. A Frame rate setting shows the frames a second.
+- v0.2.0 (2026-11-15), the Feel release. BC found v0.1.2 much smoother and asked for bigger shots, then for best judgment on quality of life. Bigger shots, aim assist levels, a corner mini map, enemy health bars, a low health warning, auto pause, screen shake, rumble and touch stick settings.
+- v0.2.1 (2026-11-15). BC asked for a different default ship shape and picked the Swallow glider from four options. The ship turns smoothly toward the aim. New app icon.
 - v0.3.0 (2026-11-15), Release 2: coins and the shop. Coins from enemies, trees and breakable bushes, crystals and pots. 10 hidden coin caches. Wren's Wagon with 7 items: Repair kit, Heart seed, Spare part, Coin magnet, Shield charm, Quick dash and Treasure map.
-- v0.3.1 (2026-11-15). Brian asked for a 3D modeled ship. The Swallow glider got Gemini reference views, a Meshy 3D model and a spec sheet. The game now draws the ship from five sprites rendered from that model. It banks into turns and sideways moves. Gameplay did not change.
-- v0.3.2 (2026-11-15). Brian found the Swallow glider did not look good in game. A new ship, the Manta: Gemini drew four top-down concepts, each tested at game size on grass and stone. Brian picked the Manta, and the Meshy 3D render over the flat drawing in a side by side game build. 60 px across, a wide rounded ray shape in sky blue and orange.
-- v0.3.3 (2026-11-15). Brian asked for a closer camera so everything is bigger, and less thrust from the back of the ship. The camera zooms in 1.4x and eases back out in the boss arena so the whole fight stays in view. Regular enemies no longer fire from off screen. The engine flame and the trail behind the ship are much smaller.
-- v0.3.4 (2026-11-15), quality of life. Brian took all the suggested QoL items. Edge markers for enemies off screen, Wren's Wagon and the next goal. A Camera setting (Close or Normal). Fast travel between reached checkpoints from the Map page. Find hints: a soft chime and a gold ring near a keepsake, plus keepsake and cache counts per area on the Map page. A left-handed touch layout and fixed sticks. Color-safe shot colors. Each one is a setting.
+- v0.3.1 (2026-11-15). BC asked for a 3D modeled ship. The Swallow glider got Gemini reference views, a Meshy 3D model and a spec sheet. The game now draws the ship from five sprites rendered from that model. It banks into turns and sideways moves. Gameplay did not change.
+- v0.3.2 (2026-11-15). BC found the Swallow glider did not look good in game. A new ship, the Manta: Gemini drew four top-down concepts, each tested at game size on grass and stone. BC picked the Manta, and the Meshy 3D render over the flat drawing in a side by side game build. 60 px across, a wide rounded ray shape in sky blue and orange.
+- v0.3.3 (2026-11-15). BC asked for a closer camera so everything is bigger, and less thrust from the back of the ship. The camera zooms in 1.4x and eases back out in the boss arena so the whole fight stays in view. Regular enemies no longer fire from off screen. The engine flame and the trail behind the ship are much smaller.
+- v0.3.4 (2026-11-15), quality of life. BC took all the suggested QoL items. Edge markers for enemies off screen, Wren's Wagon and the next goal. A Camera setting (Close or Normal). Fast travel between reached checkpoints from the Map page. Find hints: a soft chime and a gold ring near a keepsake, plus keepsake and cache counts per area on the Map page. A left-handed touch layout and fixed sticks. Color-safe shot colors. Each one is a setting.
 
 ## Now
 
-- Brian plays v0.3.4 and reports how the new options feel.
-- Next is the standards catch-up release: source moves to the private repo game-studio, kit 1.8.0 with the standard Settings, 5 save slots, Copy bug report and pause when a controller disconnects. Then Release 3, weapons (v0.4.0), unless Brian picks something else.
+- BC plays v0.3.4 and reports how the new options feel.
+- Next is the standards catch-up release: source moves to the private repo game-studio, kit 1.8.0 with the standard Settings, 5 save slots, Copy bug report and pause when a controller disconnects. Then Release 3, weapons (v0.4.0), unless BC picks something else.
 
-## Asked for by Brian, not built yet
+## Asked for by BC, not built yet
 
 Asked 2026-11-15. The release each one lands in is shown in the roadmap.
 
@@ -47,9 +47,9 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
 12. New paint colors for ships.
 37. Spec sheets for more art, like the Swallow glider ship spec: one for each enemy, boss, new ship and ship add-on. Each holds reference views, colors, size, markers and a hitbox. Asked 2026-11-15. Each sheet lands in the release that adds that art.
 
-## Ideas to choose from (Brian picks by number)
+## Ideas to choose from (BC picks by number)
 
-Suggested 2026-11-15. Each has a place in the roadmap. Brian can move or drop any of them.
+Suggested 2026-11-15. Each has a place in the roadmap. BC can move or drop any of them.
 
 13. Corner mini map, with a toggle. Done in v0.2.0.
 14. Fast travel between checkpoints. Done in v0.3.4.
@@ -80,11 +80,11 @@ Suggested 2026-11-15. Each has a place in the roadmap. Brian can move or drop an
 
 ## Roadmap: 10 releases
 
-Order of thought: feel first, then the money loop, then things to collect and wear, then the world grows. Biome 2 waits until the gameplay is good (Brian, 2026-11-15).
+Order of thought: feel first, then the money loop, then things to collect and wear, then the world grows. Biome 2 waits until the gameplay is good (BC, 2026-11-15).
 
 | Release | Theme | What is in it | Backlog items |
 |---|---|---|---|
-| 1. v0.2.0, done | Feel | Fixes from Brian's playtest. Tuning of speed, shots and enemies. Better hit and hurt feedback. Aim assist strength, rumble, shake setting, touch settings, corner mini map. Still one biome | 13, 23, 24, 30 |
+| 1. v0.2.0, done | Feel | Fixes from BC's playtest. Tuning of speed, shots and enemies. Better hit and hurt feedback. Aim assist strength, rumble, shake setting, touch settings, corner mini map. Still one biome | 13, 23, 24, 30 |
 | 2. v0.3.0, done | Coins and the shop | Coins hidden around the biome. Trees, bushes and enemies drop coins when shot. A shop with items to buy. Scenery that breaks | 7, 8, 9, 25 |
 | 3. v0.4.0 | Weapons | New weapon types to find, such as a spread shot, a piercing shot and a homing shot. Weapon upgrades to find. A charged super shot | 5, 6, 17 |
 | 4. v0.5.0 | Secrets | Hidden rooms and cracked walls. Finds in the first biome rise to 30. Find hints. Enemy journal. Elite enemies | 3, 18, 29, 36, part of 2 |
@@ -101,7 +101,7 @@ Item 37 rides along with the art it covers: ship and add-on sheets in Release 5,
 
 ## Later
 
-- Google Play listing, after v1.0.0 and only when Brian says so.
+- Google Play listing, after v1.0.0 and only when BC says so.
 - Shared HUD pieces in the kit, when a second game needs them (G10.5).
 
 ## Not planned (they break the pillars)
@@ -110,7 +110,7 @@ Item 37 rides along with the art it covers: ship and add-on sheets in Release 5,
 - Leaderboards or play against other people.
 - Ads or paid items. The shop uses coins found in play only.
 
-## Decisions from Brian
+## Decisions from BC
 
 - 2026-11-15: a new game in the style of Minishoot' Adventures, in Godot, on the shared standards, with an override file for the shooter parts.
 - 2026-11-15: use best judgment for the MVP release.
@@ -127,10 +127,10 @@ Item 37 rides along with the art it covers: ship and add-on sheets in Release 5,
 - 2026-11-15: a closer camera and less thrust from the back of the ship. Shipped in v0.3.3.
 - 2026-11-15: all seven suggested QoL items in the next release unless they need splitting. Six shipped in v0.3.4. Standard Settings and save slots go with the standards catch-up release, since they come from kit 1.8.0.
 
-## Judgment calls made for v0.1.0 (Brian can change any)
+## Judgment calls made for v0.1.0 (BC can change any)
 
-- Name: Tiny Tailwind, chosen by Brian on 2026-11-15 after seeing the overlap notes (a space shooter called Tailwind: Prologue exists, and the name sits near Tiny Titans Football).
-- Look: 2D, drawn in code. The ship became sprites from a 3D model in v0.3.1 (Brian's ask), and the Manta in v0.3.2.
+- Name: Tiny Tailwind, chosen by BC on 2026-11-15 after seeing the overlap notes (a space shooter called Tailwind: Prologue exists, and the name sits near Tiny Titans Football).
+- Look: 2D, drawn in code. The ship became sprites from a 3D model in v0.3.1 (BC's ask), and the Manta in v0.3.2.
 - Signing: the real key from `game-signing`.
 - Overrides 3 to 7 in `STANDARDS_OVERRIDES.md`.
 - Default difficulty is Normal. Auto aim is off by default.

@@ -4,7 +4,7 @@ Tiny Tailwind is an original game. The world, the enemies, the boss and every ot
 
 ## The ship (v0.3.2)
 
-- The Manta, an original design for this game. Google Gemini drew four top-down concepts (`art_source/ship_concepts_gemini.jpg`) and the final top-down drawing (`art_source/manta_topdown_gemini.jpg`). Meshy (meshy.ai, Meshy 7.1, Brian's paid plan, licence set to Private) turned the drawing into the 3D model `art_source/manta.glb`.
+- The Manta, an original design for this game. Google Gemini drew four top-down concepts (`art_source/ship_concepts_gemini.jpg`) and the final top-down drawing (`art_source/manta_topdown_gemini.jpg`). Meshy (meshy.ai, Meshy 7.1, BC's paid plan, licence set to Private) turned the drawing into the 3D model `art_source/manta.glb`.
   Changes: rendered into five top-down sprites with an outline by `tools/render_ship_sprites.py`. Sprites: `art/ship/`.
 - v0.3.1 used the Swallow glider, an earlier original model made the same way. It was replaced in v0.3.2.
 
