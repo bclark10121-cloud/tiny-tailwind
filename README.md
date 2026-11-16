@@ -1,21 +1,15 @@
 # Tiny Tailwind
 
-A twin-stick adventure shooter for the browser and Android. Fly a small ship through the Sunmeadow, find 20 keepsakes, win the dash in Echo Hollow and calm the warden of Thornkeep.
+A twin-stick adventure. Fly a little manta-winged ship, find 20 keepsakes and calm the warden of the keep. Defeat never costs a thing. For Android and the browser.
 
-- Game page: https://bclark10121-cloud.github.io/tiny-tailwind/
-- More games: https://bclark10121-cloud.github.io/
+Play in the browser or download the Android APK from the game page: https://bclark10121-cloud.github.io/tiny-tailwind/
 
-Made with Godot 4.6. All art is drawn in code. Defeat costs nothing and assists are in the Menu.
+More games: https://bclark10121-cloud.github.io/
 
-## Layout
+## What is in this repo
 
-| Path | What it is |
-|---|---|
-| `scripts/` | The game: `main.gd` (rules of play), `world_view.gd` (drawing), `hud.gd` (HUD and menus), `bot.gd` (test bot), `enemy.gd` |
-| `data/` | The world, enemies and finds as data |
-| `tools/` | `make_world.py` and `make_sfx.py`, plus the shared kit in `tools/common/` |
-| `tests/` | The browser test, plus the shared kit in `tests/common/` |
-| `docs/` | The game page, the browser build, the APK and release notes |
-| `BACKLOG.md` | What is done, what is asked for and the roadmap |
-| `STANDARDS_OVERRIDES.md` | Where this game differs from the shared standards |
-| `CREDITS.md` | Outside assets and their licences |
+- `docs/`: the game page, the browser build, the Android APKs and the release notes.
+- `BACKLOG.md`: what is done and what is planned.
+- `CREDITS.md`: outside assets and their licences.
+
+The game's source is kept in a private repo.

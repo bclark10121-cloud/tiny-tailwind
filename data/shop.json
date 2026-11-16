@@ -1,9 +1,0 @@
-[
-{"id": "repair", "name": "Repair kit", "note": "Refill every heart now.", "prices": [10], "max": 0},
-{"id": "heart", "name": "Heart seed", "note": "One more heart, for good.", "prices": [50, 75], "max": 2},
-{"id": "point", "name": "Spare part", "note": "One more upgrade point for your ship.", "prices": [30, 45, 60], "max": 3},
-{"id": "magnet", "name": "Coin magnet", "note": "Pulls coins and crystals in from further away.", "prices": [50], "max": 1},
-{"id": "shield", "name": "Shield charm", "note": "Blocks one hit. Recharges at every checkpoint.", "prices": [75], "max": 1},
-{"id": "quick_dash", "name": "Quick dash", "note": "The dash recharges a third faster.", "prices": [80], "max": 1, "needs": "c_dash"},
-{"id": "treasure_map", "name": "Treasure map", "note": "Shows keepsakes and coin caches you have not found yet on both maps.", "prices": [60], "max": 1}
-]

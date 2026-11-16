@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-15 for v0.3.4. BC decides the order.
+Updated 2026-11-16 for v0.3.5 (staged). BC decides the order.
 
 ## Done
 
@@ -23,11 +23,13 @@ Updated 2026-11-15 for v0.3.4. BC decides the order.
 - v0.3.2 (2026-11-15). BC found the Swallow glider did not look good in game. A new ship, the Manta: Gemini drew four top-down concepts, each tested at game size on grass and stone. BC picked the Manta, and the Meshy 3D render over the flat drawing in a side by side game build. 60 px across, a wide rounded ray shape in sky blue and orange.
 - v0.3.3 (2026-11-15). BC asked for a closer camera so everything is bigger, and less thrust from the back of the ship. The camera zooms in 1.4x and eases back out in the boss arena so the whole fight stays in view. Regular enemies no longer fire from off screen. The engine flame and the trail behind the ship are much smaller.
 - v0.3.4 (2026-11-15), quality of life. BC took all the suggested QoL items. Edge markers for enemies off screen, Wren's Wagon and the next goal. A Camera setting (Close or Normal). Fast travel between reached checkpoints from the Map page. Find hints: a soft chime and a gold ring near a keepsake, plus keepsake and cache counts per area on the Map page. A left-handed touch layout and fixed sticks. Color-safe shot colors. Each one is a setting.
+- v0.3.5 (staged 2026-11-16 on the branch `staging/tiny-tailwind-catchup`, ships when BC says), the standards catch-up with no new content (Release 4). Five save slots with Continue, Play and Delete. The kit Settings panel with Music and Sound in five levels, Text size and Reduce motion, and this game's twelve options. The Menu row Resume, Settings, How to play, Ship, Journal, Map, Title. How to play with every control and the device in use marked. Hints and the title card follow the device in use. Pause on app, tab and controller loss. Rumble buzzes the phone too. Tester tools behind a code in test builds. A new icon of the Manta. A privacy page. GitHub Releases. The source moved to the private `game-studio` repo. Version code 11.
 
 ## Now
 
-- BC plays v0.3.4 and reports how the new options feel.
-- Next is the standards catch-up release: source moves to the private repo game-studio, kit 1.8.0 with the standard Settings, 5 save slots, Copy bug report and pause when a controller disconnects. Then Release 3, weapons (v0.4.0), unless BC picks something else.
+- BC says when v0.3.5 ships. Then he tries it on a real phone and an Xbox controller.
+- The graphics work staged in BC's other chat (`staging/graphics-phase1` and `staging/graphics-phase2` in the page repo, built on v0.3.4 with the source still there) moves onto the new source in `game-studio` once v0.3.5 ships.
+- Then Release 3, weapons (v0.4.0), unless BC picks something else.
 
 ## Asked for by BC, not built yet
 
@@ -103,8 +105,6 @@ Item 37 rides along with the art it covers: ship and add-on sheets in Release 5,
 
 From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on a real device. Each line comes off when it is done. BC picks when.
 
-- The standards catch-up (Release 4): staged on a branch in `game-studio`, ships only when BC says (BC, 2026-11-15, 11:44 PM). Source move (G1.7), kit 1.9.1, Settings and five save slots (G5.11 to G5.13), Tester tools (G5.9), device hints and pause (G5.14, G5.15), the Menu order (G5.16), a 1024 icon master (G6.10), a privacy page (G6.13) and GitHub Releases (G2.10).
-- G4.2: BC to confirm the four pillars in `CLAUDE.md`.
 - G7.5: not tested on a real phone, a real controller or with sound on.
 - E1.2: `world_view.gd` and `hud.gd` reach `main.gd` through a plain `Node2D` reference, so those reads are not type checked.
 - E3.1, E4.6: draw calls and memory not measured on a device.
@@ -137,7 +137,20 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 - 2026-11-15: render the Meshy 3D Swallow ship into sprites for the 2D game, as its own release. This is an exception to the rule that all art is drawn in code. Shipped in v0.3.1.
 - 2026-11-15: the Swallow did not look good in game. Start over with something closer to the compact top-down ships of the genre, but original. Picked the Manta concept at 60 px and the Meshy render. Shipped in v0.3.2.
 - 2026-11-15: a closer camera and less thrust from the back of the ship. Shipped in v0.3.3.
+- 2026-11-16: the catch-up builds on v0.3.4 main. The graphics branches merge in later.
 - 2026-11-15: all seven suggested QoL items in the next release unless they need splitting. Six shipped in v0.3.4. Standard Settings and save slots go with the standards catch-up release, since they come from kit 1.8.0.
+
+## Judgment calls made in v0.3.5 (BC to confirm or change)
+
+1. Version 0.3.5, not 0.4.0. The roadmap keeps v0.4.0 for weapons. The Scenic Route took a patch number for its catch-up too.
+2. Built on v0.3.4 main, not on the graphics branches (BC, 2026-11-16).
+3. Every option moved into the device Settings, Difficulty and the assists too, so all slots share them (G5.11). The save keeps the old fields for old builds.
+4. Screen shake is On or Off now. An old Low setting becomes On, which is the full shake.
+5. Choosing a slot rebuilds the world and starts play there at once, as The Scenic Route does.
+6. No Quit button on the title card. The browser cannot close, and Android closes from the system.
+7. Rumble now buzzes the phone too, on by default, as the standard says. The APK asks for the vibration permission.
+8. The new icon shows the Manta, rendered from BC's model, climbing on a golden tailwind over a night meadow. The old icon still showed the Swallow glider.
+9. The Settings About line credits the music and names the privacy page.
 
 ## Judgment calls made for v0.1.0 (BC can change any)
 

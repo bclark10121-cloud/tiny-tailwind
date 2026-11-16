@@ -24,7 +24,7 @@ Tiny Tailwind is an original game. The world, the enemies, the boss and every ot
 
 - All sounds, made by `tools/make_sfx.py`.
 - All art except the ship, drawn in code.
-- The icon, drawn in code.
+- The app icon (v0.3.5): a large render of the Manta from `art_source/manta.glb`, on a sky, wind and meadow drawn by `tools/make_icon_master.py`.
 
 ## Tools
 
