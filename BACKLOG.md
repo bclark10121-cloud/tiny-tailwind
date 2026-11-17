@@ -72,6 +72,7 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
     - Working title (BC 2026-11-16): Manta Quest: The Lost Pearl. The ship stays the Manta, a palace guardian searching for the Dragon King's lost pearl. Web check 2026-11-16 found no game called Manta Quest. Nearest: Manta (2022), a sci-fi flight and submarine game. Short app label still to pick (the full name is cut off under an icon). Trademark and Play Store not checked.
     - Still open: confirm the name before a rename release. Names starting with Tide, Koi or Lantern are crowded (web check 2026-11-16). A rename touches the page repo, The Game Shelf card, the app ID and the icon, and a new app ID means testers reinstall.
     - Watch: blue water hides blue and cyan shots, so shot colors and color-safe shots need a recheck. Water effects cost frame time on the Retroid. A review by someone with Chinese cultural background is wise, and AI art often mixes in Japanese styles. The theme touches Weapons (v0.4.0) and Graphics Phase 3, so decide it before either starts.
+41. Suno music, third in line (BC, 2026-11-16, waits on G8.7). A track per area and a boss track in the undersea theme (item 40), made when the theme lands. Today Stage 2 plays in two areas.
 
 ## Ideas to choose from (BC picks by number)
 
@@ -232,3 +233,12 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 - Signing: the real key from `game-signing`.
 - Overrides 3 to 7 in `STANDARDS_OVERRIDES.md`.
 - Default difficulty is Normal. Auto aim is off by default.
+
+## v0.4.0 (2026-11-17, Release 6)
+
+- Shipped: the shared start screen (G5.21, kit 1.10.0) with this game's own painted scene (`scripts/title_art.gd`). Continue only when there is something to continue, Play opens the slot list, Settings, Quit off the web. Long key lists, tips and credits left the start screen.
+
+### Judgment calls in v0.4.0 (BC to confirm)
+
+1. The controls line on the start screen is cut to the main keys and buttons. How to play keeps the full list.
+2. The Game Shelf card shows the new start screen in place of a play picture.
