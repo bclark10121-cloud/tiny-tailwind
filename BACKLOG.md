@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-16 for v0.3.10. BC decides the order.
+Updated 2026-11-17 for v0.5.0. BC decides the order.
 
 ## Graphics plan (BC, 2026-11-15)
 
@@ -12,6 +12,8 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 4. Phase 4: paint colors for ships (palette swap), rounded 9-slice menu frames, a restyled minimap, drifting fog and cloud shadows.
 
 ## Done
+
+- v0.5.0 (2026-11-17), Release 7 (standards review, kit 1.12.0): Records page with 11 achievements and 7 stats, Change controls, Battery saver, backup codes, old-save checks, an error log and sound at one loudness level.
 
 - v0.1.0 (2026-11-15), the first beta. One biome: the Sunmeadow, its cave (Echo Hollow) and its keep (Thornkeep).
   - Twin-stick flying and shooting with touch, controller and keyboard and mouse.
@@ -241,4 +243,4 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 ### Judgment calls in v0.4.0 (BC to confirm)
 
 1. The controls line on the start screen is cut to the main keys and buttons. How to play keeps the full list.
-2. The Game Shelf card shows the new start screen in place of a play picture.
+2. The Game Shelf card shows gameplay (BC, 2026-11-17: picked from three options).
