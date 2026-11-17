@@ -62,6 +62,15 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
 11. New ship add-ons.
 12. New paint colors for ships.
 37. Spec sheets for more art, like the Swallow glider ship spec: one for each enemy, boss, new ship and ship add-on. Each holds reference views, colors, size, markers and a hitbox. Asked 2026-11-15. Each sheet lands in the release that adds that art.
+40. A new theme so the game stops looking like Minishoot' Adventures: an undersea dragon palace from Chinese myth (worked up as "Dragon King's Sea", BC 2026-11-16: likes the idea, not that name). Asked 2026-11-16. Not placed in the roadmap yet. BC picks when.
+    - World: under an eastern sea. Coral palaces, sunken temples, jade caves and kelp forests hung with red lanterns. The meadow, Echo Hollow and Thornkeep become a reef, a sea cave and a sunken palace or temple. Walls become coral and rock. Rifts become trenches.
+    - Currents take the place of wind. Swimming with one gives a speed burst.
+    - Enemies keep their behaviors and get mythic sea looks: lionfish spirits, a turtle general, a crab guardian, a clam that breathes mirages and more.
+    - Pickups: coins become pearls, crystals become sea glass or jade, shots become glowing bubble bolts.
+    - Ship: keep the Manta as a palace guardian, or a sea dragon hatchling that grows fins and horns with upgrades. BC to pick.
+    - Room for 10 sea biomes, such as reef, kelp forest, shipwreck, ice sea, volcanic vents, deep trench, sunken city, mangroves, a glowing abyss and a storm surface.
+    - Open: a new game name and maybe a new ship name. Names starting with Tide, Koi or Lantern are crowded (web check 2026-11-16). A rename touches the page repo, The Game Shelf card, the app ID and the icon, and a new app ID means testers reinstall.
+    - Watch: blue water hides blue and cyan shots, so shot colors and color-safe shots need a recheck. Water effects cost frame time on the Retroid. A review by someone with Chinese cultural background is wise, and AI art often mixes in Japanese styles. The theme touches Weapons (v0.4.0) and Graphics Phase 3, so decide it before either starts.
 
 ## Ideas to choose from (BC picks by number)
 
@@ -157,6 +166,7 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 - 2026-11-16: the pew was hard to hear, maybe under the music. BC picked "Louder pew" and "Quieter music overall" (not a pew on every shot, not a separate Shots volume). Shipped in v0.3.9.
 - 2026-11-16: "yes" to moving graphics Phase 1 and Phase 2 onto `game-studio` and shipping them as the next release. Shipped in v0.3.8.
 - 2026-11-15: all seven suggested QoL items in the next release unless they need splitting. Six shipped in v0.3.4. Standard Settings and save slots go with the standards catch-up release, since they come from kit 1.8.0.
+- 2026-11-16: add the undersea dragon palace theme to the backlog as item 40. BC likes the idea, not the name "Dragon King's Sea". Name and ship still open.
 
 ## Judgment calls made in v0.3.10 (BC to confirm or change)
 
