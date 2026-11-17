@@ -69,7 +69,8 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
     - Pickups: coins become pearls, crystals become sea glass or jade, shots become glowing bubble bolts.
     - Ship: keep the Manta as a palace guardian, or a sea dragon hatchling that grows fins and horns with upgrades. BC to pick.
     - Room for 10 sea biomes, such as reef, kelp forest, shipwreck, ice sea, volcanic vents, deep trench, sunken city, mangroves, a glowing abyss and a storm surface.
-    - Open: a new game name and maybe a new ship name. Names starting with Tide, Koi or Lantern are crowded (web check 2026-11-16). A rename touches the page repo, The Game Shelf card, the app ID and the icon, and a new app ID means testers reinstall.
+    - Working title (BC 2026-11-16): Manta Quest: The Lost Pearl. The ship stays the Manta, a palace guardian searching for the Dragon King's lost pearl. Web check 2026-11-16 found no game called Manta Quest. Nearest: Manta (2022), a sci-fi flight and submarine game. Short app label still to pick (the full name is cut off under an icon). Trademark and Play Store not checked.
+    - Still open: confirm the name before a rename release. Names starting with Tide, Koi or Lantern are crowded (web check 2026-11-16). A rename touches the page repo, The Game Shelf card, the app ID and the icon, and a new app ID means testers reinstall.
     - Watch: blue water hides blue and cyan shots, so shot colors and color-safe shots need a recheck. Water effects cost frame time on the Retroid. A review by someone with Chinese cultural background is wise, and AI art often mixes in Japanese styles. The theme touches Weapons (v0.4.0) and Graphics Phase 3, so decide it before either starts.
 
 ## Ideas to choose from (BC picks by number)
@@ -167,6 +168,7 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 - 2026-11-16: "yes" to moving graphics Phase 1 and Phase 2 onto `game-studio` and shipping them as the next release. Shipped in v0.3.8.
 - 2026-11-15: all seven suggested QoL items in the next release unless they need splitting. Six shipped in v0.3.4. Standard Settings and save slots go with the standards catch-up release, since they come from kit 1.8.0.
 - 2026-11-16: add the undersea dragon palace theme to the backlog as item 40. BC likes the idea, not the name "Dragon King's Sea". Name and ship still open.
+- 2026-11-16: working title Manta Quest: The Lost Pearl for item 40. The Manta stays as the ship.
 
 ## Judgment calls made in v0.3.10 (BC to confirm or change)
 
