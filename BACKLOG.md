@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-18 for v0.6.0 (staged, not shipped). BC decides the order.
+Updated 2026-11-18 for v0.6.1. BC decides the order.
 
 ## Graphics plan (BC, 2026-11-15)
 
@@ -12,6 +12,8 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 4. Phase 4: paint colors for ships (palette swap), rounded 9-slice menu frames, a restyled minimap, drifting fog and cloud shadows.
 
 ## Done
+
+- v0.6.1 (2026-11-18): start screen music (G5.21, asked for by BC). The title track is "Aquarium" (Kevin MacLeod, CC BY 4.0), `audio/music_title.ogg`. `play_music()` swaps in the title track while `phase` is TITLE and fades into the room's music on Play. On Android and desktop it starts with the start screen, in a browser on the first press. No two games share a title track.
 
 - v0.5.0 (2026-11-17), Release 7 (standards review, kit 1.12.0): Records page with 11 achievements and 7 stats, Change controls, Battery saver, backup codes, old-save checks, an error log and sound at one loudness level.
 
