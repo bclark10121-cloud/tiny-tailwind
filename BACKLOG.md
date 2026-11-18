@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-17 for v0.5.0. BC decides the order.
+Updated 2026-11-18 for v0.6.0 (staged, not shipped). BC decides the order.
 
 ## Graphics plan (BC, 2026-11-15)
 
@@ -244,3 +244,20 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 
 1. The controls line on the start screen is cut to the main keys and buttons. How to play keeps the full list.
 2. The Game Shelf card shows gameplay (BC, 2026-11-17: picked from three options).
+
+## v0.6.0 (2026-11-18, Release 8, shipped 2026-11-18 on BC's "push out")
+
+- Back at the top (G5.30) and landscape and portrait (G6.18), kit 1.13.0. The game turns with the device (`window/handheld/orientation=6`, the APK reads fullUser).
+- Upright, the Menu row drops under the Menu button in two lines of four and the page sits under it. Wide, it stays one line across the top.
+- How to play over the title card and Wren's Wagon have Back at the top left. The Wagon's Close at the bottom is gone.
+- The dash button sits lower upright (60 percent down the screen, was 44) so the right thumb reaches it.
+- `tests/orient_test.py` is the five-size browser check. `tests/look_shot.gd` takes pictures without a browser.
+
+### Judgment calls in v0.6.0 (BC to confirm)
+
+1. The camera keeps the same zoom upright. The view is as large as before, turned: less to the sides, more above and below. A zoom out upright would make the ship and enemies smaller.
+2. The in-game Menu keeps its row at the top with Resume first and Close at the top right. It gets no separate Back: Resume and Close already sit at the top (G5.30 asks that nothing sits only at the bottom).
+3. The Wagon's Close button is now Back at the top left (the kit header names it Back). Esc and B still close it.
+4. The end card ("The keep is calm") keeps its one button in the middle. It is a result card, not a full-screen panel.
+5. The minimap stays at the top right under the Menu button in both orientations.
+6. Upright touch sticks were not tried on a real phone. The dash button height is a guess from the screen layout.
