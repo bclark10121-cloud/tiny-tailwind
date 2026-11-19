@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-18 for v0.6.1. BC decides the order.
+Updated 2026-11-19 for v0.6.3. BC decides the order.
 
 ## Graphics plan (BC, 2026-11-15)
 
@@ -12,6 +12,8 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 4. Phase 4: paint colors for ships (palette swap), rounded 9-slice menu frames, a restyled minimap, drifting fog and cloud shadows.
 
 ## Done
+
+- v0.6.3 (2026-11-19): kit K2, the shooter core (BC: "k2, shooter core next", full pull). Shots, the four fire patterns, shake, hit stop, the hurt flash, the zoom punch and the warden's attack cycle now come from the kit `shooter_core.gd` (kit 1.16.0). Play is the same: a before and after bot trace matched. First game on K2.
 
 - v0.6.2 (2026-11-18): start screen title (G5.21 Title, asked for by BC). The name sits in the dead center, above the buttons, in Chewy (Apache License 2.0), on the start screen, the game page and the Game Shelf card. Kit 1.15.0.
 
