@@ -13,6 +13,8 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 
 ## Done
 
+- v0.6.2 (2026-11-18): start screen title (G5.21 Title, asked for by BC). The name sits in the dead center, above the buttons, in Chewy (Apache License 2.0), on the start screen, the game page and the Game Shelf card. Kit 1.15.0.
+
 - v0.6.1 (2026-11-18): start screen music (G5.21, asked for by BC). The title track is "Aquarium" (Kevin MacLeod, CC BY 4.0), `audio/music_title.ogg`. `play_music()` swaps in the title track while `phase` is TITLE and fades into the room's music on Play. On Android and desktop it starts with the start screen, in a browser on the first press. No two games share a title track.
 
 - v0.5.0 (2026-11-17), Release 7 (standards review, kit 1.12.0): Records page with 11 achievements and 7 stats, Change controls, Battery saver, backup codes, old-save checks, an error log and sound at one loudness level.

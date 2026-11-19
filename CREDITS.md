@@ -10,6 +10,8 @@ Tiny Tailwind is an original game. The world, the enemies, the boss and every ot
 
 ## Music (found through the Patch.gg asset library)
 
+- Start screen title track (G5.21, v0.6.1): "Aquarium" by Kevin MacLeod (incompetech.com, https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1900026), licensed Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/). Changed by Patch: converted from MP3 to Ogg Vorbis, credit added to the Ogg comments. Changed: trimmed to a loop and level-matched. File `audio/music_title.ogg`.
+
 - "Stage 1" by Juhani Junkala. https://opengameart.org/content/4-chiptunes-adventure
   Licensed CC0 1.0 Universal. https://creativecommons.org/publicdomain/zero/1.0/
   Changes: re-encoded to Ogg Vorbis at 112 kbps. Used in the Sunmeadow.
@@ -34,3 +36,4 @@ Tiny Tailwind is an original game. The world, the enemies, the boss and every ot
 
 - Nunito Bold for menus and text. Copyright 2014 The Nunito Project Authors. SIL Open Font License 1.1 (`fonts/OFL-Nunito.txt`). From the Fontsource package `@fontsource/nunito` 5.3.0, Latin subset.
 - Fredoka SemiBold for the title and world labels. Copyright 2016 The Fredoka Project Authors. SIL Open Font License 1.1 (`fonts/OFL-Fredoka.txt`). From the Fontsource package `@fontsource/fredoka` 5.3.0, Latin subset.
+- Title font: Chewy, Apache License 2.0. Start screen, game page and Game Shelf card name (G5.21 Title, 2026-11-18). License text in `FONT-LICENSE-Chewy.txt`.
