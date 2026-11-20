@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-19 for v0.6.3. BC decides the order.
+Updated 2026-11-20 for v0.8.0. BC decides the order.
 
 ## Graphics plan (BC, 2026-11-15)
 
@@ -12,6 +12,8 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 4. Phase 4: paint colors for ships (palette swap), rounded 9-slice menu frames, a restyled minimap, drifting fog and cloud shadows.
 
 ## Done
+
+- v0.8.0 (2026-11-20), Release 3: weapons (BC, 2026-11-20: "move forward with your suggestion"). Three weapons to find: the Spread Shot (Sunmeadow), the Pierce Shot (Echo Hollow) and the Homing Shot (Thornkeep). Three Tuning Cores, one per area, make every weapon better. A charged super shot on its own button (LT, E or the Charge button). Swap with Y, Q, the mouse wheel, the Swap button or the Ship page. Finds rise from 20 to 26. Score and best (G4.17, kit `score.gd`) on the HUD and the Records page. Three new achievements. Fixes: the title card read 0.6.3 in v0.7.0, and the leftover 60 frame cap on phones is gone (G6.20). Version code 24. Backlog items 5, 6 and 17 done.
 
 - v0.7.0 (2026-11-19): Godot 4.7.2, kit 1.18.0, G6.20 (no 60 cap, `tests/feel_check.gd`, Show frame rate), full screen by default in the browser, G6.21 wide check. Next: Release 3, weapons (BC's sweep: ready).
 
@@ -51,11 +53,9 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 
 ## Now
 
-- Staged for the next release (BC, 2026-11-19, 10:32 PM): full screen by default in the browser (G5.11, standards 19b). Pull kit 1.17.0 with `sync_common.sh`: the game goes full screen on the first tap, click or key press, and remembers when the player turns it off. Test: `tests/common` browser run, first click sets full screen. Also take G6.20 (120 frames a second) at the same release.
-- Playtest sweep results (BC, 2026-11-19, 8:59 PM):
-  - Good: frame rate with the glow on, the pew, upright touch sticks and dash button, overall feel. Ready for Release 3, weapons.
-  - All judgment calls from v0.4.0 and v0.6.0 confirmed.
-- Then Release 3, weapons, unless BC picks something else.
+- BC's check of v0.8.0: how each weapon and the charged shot feel, the Charge and Swap touch buttons, the score line.
+- Next (BC, 2026-11-20, 10:00 AM): the story and visual redesign, the undersea dragon palace theme (item 40, working title Manta Quest: The Lost Pearl). Decision pages first: name, ship, world look, story.
+- Still to take from the G4.17 to G4.20 rollout table: G4.18 completion and stars, G4.19 daily goals, G4.20 player level and cosmetic unlocks. Tiny Tailwind is Y on all three. Open items, not overrides.
 - Graphics Phase 3 and 4 wait for BC to pick them.
 
 ## Asked for by BC, not built yet
@@ -66,8 +66,8 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
 2. 300 collectibles.
 3. Hidden rooms.
 4. 10 boss battles.
-5. New weapon types to find.
-6. New weapon upgrades to find.
+5. New weapon types to find. Done in v0.8.0.
+6. New weapon upgrades to find. Done in v0.8.0 (Tuning Cores).
 7. A shop with items to buy. Done in v0.3.0.
 8. Coins to find around the biomes to buy things. Done in v0.3.0.
 9. Shooting trees and enemies makes them drop coins the ship picks up. Done in v0.3.0.
@@ -95,7 +95,7 @@ Suggested 2026-11-15. Each has a place in the roadmap. BC can move or drop any o
 14. Fast travel between checkpoints. Done in v0.3.4.
 15. Lost friends to rescue. Each one opens something in a home village: the shop, the hangar, the paint stall.
 16. More gate abilities: a boost that skims water, a bomb that opens cracked walls and a shield.
-17. Charged super shot on a second button.
+17. Charged super shot on a second button. Done in v0.8.0.
 18. Elite enemies and mini bosses.
 19. Challenge rooms with a personal best time.
 20. Boss rush, unlocked after the last boss.
@@ -126,7 +126,7 @@ Order of thought: feel first, then the money loop, then things to collect and we
 |---|---|---|---|
 | 1. v0.2.0, done | Feel | Fixes from BC's playtest. Tuning of speed, shots and enemies. Better hit and hurt feedback. Aim assist strength, rumble, shake setting, touch settings, corner mini map. Still one biome | 13, 23, 24, 30 |
 | 2. v0.3.0, done | Coins and the shop | Coins hidden around the biome. Trees, bushes and enemies drop coins when shot. A shop with items to buy. Scenery that breaks | 7, 8, 9, 25 |
-| 3. v0.4.0 | Weapons | New weapon types to find, such as a spread shot, a piercing shot and a homing shot. Weapon upgrades to find. A charged super shot | 5, 6, 17 |
+| 3. v0.8.0, done | Weapons | New weapon types to find, such as a spread shot, a piercing shot and a homing shot. Weapon upgrades to find. A charged super shot | 5, 6, 17 |
 | 4. v0.5.0 | Secrets | Hidden rooms and cracked walls. Finds in the first biome rise to 30. Find hints. Enemy journal. Elite enemies | 3, 18, 29, 36, part of 2 |
 | 5. v0.6.0 | The hangar | New ships with their own strengths. Ship add-ons. Paint colors. Three save slots | 10, 11, 12, 22 |
 | 6. v0.7.0 | Biome 2 | The second biome with its cave, keep and boss. A new gate ability. Lost friends and the home village. Fast travel | 14, 15, 16, part of 1, 2 and 4 |
