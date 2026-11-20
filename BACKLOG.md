@@ -1,6 +1,6 @@
 # Tiny Tailwind: backlog
 
-Updated 2026-11-20 for v0.8.0. BC decides the order.
+Updated 2026-11-20 for v0.9.0. BC decides the order.
 
 ## Graphics plan (BC, 2026-11-15)
 
@@ -12,6 +12,8 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 4. Phase 4: paint colors for ships (palette swap), rounded 9-slice menu frames, a restyled minimap, drifting fog and cloud shadows.
 
 ## Done
+
+- v0.9.0 (2026-11-20), the Manta Quest redesign (BC: "build as one release"). Renamed Manta Quest: The Lost Pearl. The twilight lantern sea: the Lantern Reef, Echo Grotto and the Sunken Palace, with jade rock, coral, sea anemones, jade urns, red lanterns, glowing crystals and light shafts. Seven foes from Gemini and Meshy (jellyfish, shrimp, lionfish, spiral clam, pufferfish, ink squid, Thornhull the crab general), each keeping its old behavior. Gold and coral player shots, violet foe shots. The Lost Pearl story in the talk box: the Dragon King's intro, Thornhull's two lines and a new end card. Keepsakes renamed for the sea. Backlog item 40 done.
 
 - v0.8.0 (2026-11-20), Release 3: weapons (BC, 2026-11-20: "move forward with your suggestion"). Three weapons to find: the Spread Shot (Sunmeadow), the Pierce Shot (Echo Hollow) and the Homing Shot (Thornkeep). Three Tuning Cores, one per area, make every weapon better. A charged super shot on its own button (LT, E or the Charge button). Swap with Y, Q, the mouse wheel, the Swap button or the Ship page. Finds rise from 20 to 26. Score and best (G4.17, kit `score.gd`) on the HUD and the Records page. Three new achievements. Fixes: the title card read 0.6.3 in v0.7.0, and the leftover 60 frame cap on phones is gone (G6.20). Version code 24. Backlog items 5, 6 and 17 done.
 
@@ -54,7 +56,8 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 ## Now
 
 - BC's check of v0.8.0: how each weapon and the charged shot feel, the Charge and Swap touch buttons, the score line.
-- Next (BC, 2026-11-20, 10:00 AM): the story and visual redesign, the undersea dragon palace theme (item 40, working title Manta Quest: The Lost Pearl). Decision pages first: name, ship, world look, story.
+- BC's check of v0.9.0: the new look on his phone (can he spot every foe and shot?), the story, the name.
+- Game Shelf card picture: still the 11/17 meadow picture. BC picks a new gameplay picture from three options (G2.7).
 - Still to take from the G4.17 to G4.20 rollout table: G4.18 completion and stars, G4.19 daily goals, G4.20 player level and cosmetic unlocks. Tiny Tailwind is Y on all three. Open items, not overrides.
 - Graphics Phase 3 and 4 wait for BC to pick them.
 
@@ -75,7 +78,7 @@ Asked 2026-11-15. The release each one lands in is shown in the roadmap.
 11. New ship add-ons.
 12. New paint colors for ships.
 37. Spec sheets for more art, like the Swallow glider ship spec: one for each enemy, boss, new ship and ship add-on. Each holds reference views, colors, size, markers and a hitbox. Asked 2026-11-15. Each sheet lands in the release that adds that art.
-40. A new theme so the game stops looking like Minishoot' Adventures: an undersea dragon palace from Chinese myth (worked up as "Dragon King's Sea", BC 2026-11-16: likes the idea, not that name). Asked 2026-11-16. Not placed in the roadmap yet. BC picks when.
+40. Done in v0.9.0. A new theme so the game stops looking like Minishoot' Adventures: an undersea dragon palace from Chinese myth (worked up as "Dragon King's Sea", BC 2026-11-16: likes the idea, not that name). Asked 2026-11-16. Not placed in the roadmap yet. BC picks when.
     - World: under an eastern sea. Coral palaces, sunken temples, jade caves and kelp forests hung with red lanterns. The meadow, Echo Hollow and Thornkeep become a reef, a sea cave and a sunken palace or temple. Walls become coral and rock. Rifts become trenches.
     - Currents take the place of wind. Swimming with one gives a speed burst.
     - Enemies keep their behaviors and get mythic sea looks: lionfish spirits, a turtle general, a crab guardian, a clam that breathes mirages and more.
