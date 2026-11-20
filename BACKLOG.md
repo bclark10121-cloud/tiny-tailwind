@@ -13,6 +13,8 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 
 ## Done
 
+- v0.7.0 (2026-11-19): Godot 4.7.2, kit 1.18.0, G6.20 (no 60 cap, `tests/feel_check.gd`, Show frame rate), full screen by default in the browser, G6.21 wide check. Next: Release 3, weapons (BC's sweep: ready).
+
 - v0.6.3 (2026-11-19): kit K2, the shooter core (BC: "k2, shooter core next", full pull). Shots, the four fire patterns, shake, hit stop, the hurt flash, the zoom punch and the warden's attack cycle now come from the kit `shooter_core.gd` (kit 1.16.0). Play is the same: a before and after bot trace matched. First game on K2.
 
 - v0.6.2 (2026-11-18): start screen title (G5.21 Title, asked for by BC). The name sits in the dead center, above the buttons, in Chewy (Apache License 2.0), on the start screen, the game page and the Game Shelf card. Kit 1.15.0.
@@ -49,8 +51,11 @@ Research by six agents on 2026-11-15. BC's choices: stay 2D, a clean toy render 
 
 ## Now
 
-- BC tries v0.3.9 on a real phone, a Retroid and an Xbox controller: the frame rate with the glow on and whether the pew is easy to hear.
-- Then Release 3, weapons (v0.4.0), unless BC picks something else.
+- Staged for the next release (BC, 2026-11-19, 10:32 PM): full screen by default in the browser (G5.11, standards 19b). Pull kit 1.17.0 with `sync_common.sh`: the game goes full screen on the first tap, click or key press, and remembers when the player turns it off. Test: `tests/common` browser run, first click sets full screen. Also take G6.20 (120 frames a second) at the same release.
+- Playtest sweep results (BC, 2026-11-19, 8:59 PM):
+  - Good: frame rate with the glow on, the pew, upright touch sticks and dash button, overall feel. Ready for Release 3, weapons.
+  - All judgment calls from v0.4.0 and v0.6.0 confirmed.
+- Then Release 3, weapons, unless BC picks something else.
 - Graphics Phase 3 and 4 wait for BC to pick them.
 
 ## Asked for by BC, not built yet
@@ -246,7 +251,7 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 
 - Shipped: the shared start screen (G5.21, kit 1.10.0) with this game's own painted scene (`scripts/title_art.gd`). Continue only when there is something to continue, Play opens the slot list, Settings, Quit off the web. Long key lists, tips and credits left the start screen.
 
-### Judgment calls in v0.4.0 (BC to confirm)
+### Judgment calls in v0.4.0 (confirmed by BC 2026-11-19)
 
 1. The controls line on the start screen is cut to the main keys and buttons. How to play keeps the full list.
 2. The Game Shelf card shows gameplay (BC, 2026-11-17: picked from three options).
@@ -259,7 +264,7 @@ From the Open items in `STANDARDS_OVERRIDES.md`, plus what has not been tried on
 - The dash button sits lower upright (60 percent down the screen, was 44) so the right thumb reaches it.
 - `tests/orient_test.py` is the five-size browser check. `tests/look_shot.gd` takes pictures without a browser.
 
-### Judgment calls in v0.6.0 (BC to confirm)
+### Judgment calls in v0.6.0 (confirmed by BC 2026-11-19)
 
 1. The camera keeps the same zoom upright. The view is as large as before, turned: less to the sides, more above and below. A zoom out upright would make the ship and enemies smaller.
 2. The in-game Menu keeps its row at the top with Resume first and Close at the top right. It gets no separate Back: Resume and Close already sit at the top (G5.30 asks that nothing sits only at the bottom).
